@@ -1,0 +1,16 @@
+.idea/
+.gradle/
+*.user*
+build*
+install*
+cmake-*
+*.autosave*
+doc/
+Resources/Maps/*
+bd/*.xml
+
+# Allow build scripts, i.e. build.gradle
+!build.*
+
+# Ignore Python library cache
+__pycache__
