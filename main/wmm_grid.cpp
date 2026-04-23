@@ -4,15 +4,12 @@
 #include <stdlib.h>
 
 
-#include "../src/GeomagnetismHeader.h"
-#include "../src/EGM9615.h"
+#include "GeomagnetismHeader.h"
+#include "EGM9615.h"
 #include "version.h"
 #include "GeomagInterativeLib.h"
-/*#include "GeomagnetismLibrary.c"*/
 
 /*
-
-
 WMMHR grid program.
 
 The Geomagnetism Library is used to make a command prompt program. The program prompts
@@ -25,19 +22,18 @@ April 21, 2011
 
 liyin.young@noaa.gov
 Updated April, 2023
-
  */
 
-int MAG_Grid(MAGtype_CoordGeodetic minimum,
-        MAGtype_CoordGeodetic maximum, 
+int Grid(wmm::CoordGeodetic minimum,
+        wmm::CoordGeodetic maximum,
         double cord_step_size, 
         double altitude_step_size, 
         double time_step, 
-        MAGtype_MagneticModel *MagneticModel, 
-        MAGtype_Geoid *Geoid, 
-        MAGtype_Ellipsoid Ellip, 
-        MAGtype_Date StartDate, 
-        MAGtype_Date EndDate, 
+        wmm::MagneticModel *MagneticModel,
+        wmm::Geoid *Geoid,
+        wmm::Ellipsoid Ellip,
+        wmm::Date StartDate,
+        wmm::Date EndDate,
         int ElementOption, 
         int UncertaintyOption, 
         int PrintOption, 
@@ -62,11 +58,11 @@ const char* WMM_MileSpec_WARN = "Warning: WMM will not meet MilSpec at this alti
 
 int main()
 {
-    MAGtype_MagneticModel * MagneticModels[1];
-    MAGtype_Ellipsoid Ellip;
-    MAGtype_CoordGeodetic minimum, maximum;
-    MAGtype_Geoid Geoid;
-    MAGtype_Date startdate, enddate;
+    MagneticModel * MagneticModels[1];
+    Ellipsoid Ellip;
+    CoordGeodetic minimum, maximum;
+    Geoid Geoid;
+    Date startdate, enddate;
     int ElementOption, PrintOption, i, epochs = 1, UncertaintyOption = 1;
     double cord_step_size, altitude_step_size, time_step_size;
     #ifdef WMMHR
@@ -78,7 +74,7 @@ int main()
     char VersionDate[12];
     char ans[20];
 
-    if(!MAG_robustReadMagModels(filename, &MagneticModels, 1)) {
+    if(!robustReadMagModels(filename, &MagneticModels, 1)) {
         printf("\n %s not found.  Press enter to exit... \n ", filename);
         fgets(ans, 20, stdin);
         return 1;
@@ -86,9 +82,9 @@ int main()
     strncpy(VersionDate, VERSIONDATE_LARGE + 39, 11);
     VersionDate[11] = '\0';
 
-    MAG_SetDefaults(&Ellip, &Geoid);
+    SetDefaults(&Ellip, &Geoid);
     /* Set EGM96 Geoid parameters */
-    Geoid.GeoidHeightBuffer = GeoidHeightBuffer;
+    Geoid.GeoidHeightBuffer = std::make_unique<wmm::Geoid::GeoidHeightArray_t>(GeoidHeightBuffer);
     Geoid.Geoid_Initialized = 1;
     /* Set EGM96 Geoid parameters END */
     #ifdef WMMHR
@@ -111,10 +107,10 @@ int main()
 
     /* Get the Lat/Long, Altitude, Time limits from a user interface and print the grid to screen */
 
-    MAG_GetUserGrid(&minimum, &maximum, &cord_step_size, &altitude_step_size, &time_step_size, &startdate, &enddate, &ElementOption, &PrintOption, OutputFilename, &Geoid, MagneticModels[0]);
-    MAG_Grid(minimum, maximum, cord_step_size, altitude_step_size, time_step_size, MagneticModels[0], &Geoid, Ellip, startdate, enddate, ElementOption, UncertaintyOption, PrintOption, OutputFilename);
+    GetUserGrid(&minimum, &maximum, &cord_step_size, &altitude_step_size, &time_step_size, &startdate, &enddate, &ElementOption, &PrintOption, OutputFilename, &Geoid, MagneticModels[0]);
+    Grid(minimum, maximum, cord_step_size, altitude_step_size, time_step_size, MagneticModels[0], &Geoid, Ellip, startdate, enddate, ElementOption, UncertaintyOption, PrintOption, OutputFilename);
 
-    for(i = 0; i < epochs; i++) MAG_FreeMagneticModelMemory(MagneticModels[i]);
+    for(i = 0; i < epochs; i++) FreeMagneticModelMemory(MagneticModels[i]);
 
 
 
@@ -125,16 +121,16 @@ int main()
     return 0;
 }
 
-int MAG_Grid(MAGtype_CoordGeodetic minimum, MAGtype_CoordGeodetic maximum, double
-        cord_step_size, double altitude_step_size, double time_step, MAGtype_MagneticModel *MagneticModel, MAGtype_Geoid
-        *Geoid, MAGtype_Ellipsoid Ellip, MAGtype_Date StartDate, MAGtype_Date EndDate, int ElementOption, int UncertaintyOption, int PrintOption, char *OutputFile)
+int Grid(CoordGeodetic minimum, CoordGeodetic maximum, double
+        cord_step_size, double altitude_step_size, double time_step, MagneticModel *MagneticModel, Geoid
+        *Geoid, Ellipsoid Ellip, Date StartDate, Date EndDate, int ElementOption, int UncertaintyOption, int PrintOption, char *OutputFile)
 
 /*This function calls WMM subroutines to generate a grid as defined by the user. The function may be used
 to generate a grid of magnetic field elements, time series or a profile. The selected geomagnetic element
 is either printed to the file GridResults.txt or to the screen depending on user option.
 
 INPUT: minimum :Data structure with the following elements (minimum limits of the grid)
-                                double lambda; (longitude)
+                                double lambdag; (longitude)
                                 double phi; ( geodetic latitude)
                                 double HeightAboveEllipsoid; (height above the ellipsoid (HaE) )
                                 double HeightAboveGeoid;(height above the Geoid )
@@ -178,28 +174,28 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
 
    OUTPUT: none (prints the output to a file )
 
-   CALLS : MAG_AllocateModelMemory To allocate memory for model coefficients
-      MAG_TimelyModifyMagneticModel This modifies the Magnetic coefficients to the correct date.
-                  MAG_ConvertGeoidToEllipsoidHeight (&CoordGeodetic, &Geoid);   Convert height above msl to height above WGS-84 ellipsoid
-                  MAG_GeodeticToSpherical Convert from geodeitic to Spherical Equations: 7-8, WMM Technical report
-                  MAG_ComputeSphericalHarmonicVariables Compute Spherical Harmonic variables
-                  MAG_AssociatedLegendreFunction Compute ALF  Equations 5-6, WMM Technical report
-                  MAG_Summation Accumulate the spherical harmonic coefficients Equations 10:12 , WMM Technical report
-                  MAG_RotateMagneticVector Map the computed Magnetic fields to Geodeitic coordinates Equation 16 , WMM Technical report
-                  MAG_CalculateGeoMagneticElements Calculate the geoMagnetic elements, Equation 18 , WMM Technical report
+   CALLS : AllocateModelMemory To allocate memory for model coefficients
+      TimelyModifyMagneticModel This modifies the Magnetic coefficients to the correct date.
+                  ConvertGeoidToEllipsoidHeight (&CoordGeodetic, &Geoid);   Convert height above msl to height above WGS-84 ellipsoid
+                  GeodeticToSpherical Convert from geodeitic to Spherical Equations: 7-8, WMM Technical report
+                  ComputeSphericalHarmonicVariables Compute Spherical Harmonic variables
+                  AssociatedLegendreFunction Compute ALF  Equations 5-6, WMM Technical report
+                  Summation Accumulate the spherical harmonic coefficients Equations 10:12 , WMM Technical report
+                  RotateMagneticVector Map the computed Magnetic fields to Geodeitic coordinates Equation 16 , WMM Technical report
+                  CalculateGeoMagneticElements Calculate the geoMagnetic elements, Equation 18 , WMM Technical report
 
  */
 {
     int NumTerms;
     double a, b, c, d, PrintElement, ErrorElement = 0;
 
-    MAGtype_MagneticModel *TimedMagneticModel;
-    MAGtype_CoordSpherical CoordSpherical;
-    MAGtype_MagneticResults MagneticResultsSph, MagneticResultsGeo, MagneticResultsSphVar, MagneticResultsGeoVar;
-    MAGtype_SphericalHarmonicVariables *SphVariables;
-    MAGtype_GeoMagneticElements GeoMagneticElements, Errors;
-    MAGtype_LegendreFunction *LegendreFunction;
-    MAGtype_Gradient Gradient;
+    MagneticModel *TimedMagneticModel;
+    CoordSpherical CoordSpherical;
+    MagneticResults MagneticResultsSph, MagneticResultsGeo, MagneticResultsSphVar, MagneticResultsGeoVar;
+    SphericalHarmonicVariables *SphVariables;
+    GeoMagneticElements GeoMagneticElements, Errors;
+    LegendreFunction *LegendreFunction;
+    Gradient Gradient;
     int print_boz_warning_weak = FALSE;
     int print_boz_warning_strong = FALSE;
     int print_alt_warning = FALSE;
@@ -226,12 +222,12 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
 
 
     NumTerms = ((MagneticModel->nMax + 1) * (MagneticModel->nMax + 2) / 2);
-    TimedMagneticModel = MAG_AllocateModelMemory(NumTerms);
-    LegendreFunction = MAG_AllocateLegendreFunctionMemory(NumTerms); /* For storing the ALF functions */
-    SphVariables = MAG_AllocateSphVarMemory(MagneticModel->nMax);
+    TimedMagneticModel = AllocateModelMemory(NumTerms);
+    LegendreFunction = AllocateLegendreFunctionMemory(NumTerms); /* For storing the ALF functions */
+    SphVariables = AllocateSphVarMemory(MagneticModel->nMax);
     a = minimum.HeightAboveGeoid; /*sets the loop initialization values*/
     b = minimum.phi;
-    c = minimum.lambda;
+    c = minimum.lambdag;
     d = StartDate.DecimalYear;
     double alt = minimum.HeightAboveGeoid;
 
@@ -242,11 +238,11 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
         for(minimum.phi = b; minimum.phi <= maximum.phi; minimum.phi += cord_step_size) /*Latitude loop*/
         {
 
-            for(minimum.lambda = c; minimum.lambda <= maximum.lambda; minimum.lambda += cord_step_size) /*Longitude loop*/
+            for(minimum.lambdag = c; minimum.lambdag <= maximum.lambdag; minimum.lambdag += cord_step_size) /*Longitude loop*/
             {
                 alt = minimum.HeightAboveGeoid;
                 if(Geoid->UseGeoid == 1)
-                    MAG_ConvertGeoidToEllipsoidHeight(&minimum, Geoid); /* This converts the height above mean sea level to height above the WGS-84 ellipsoid */
+                    ConvertGeoidToEllipsoidHeight(&minimum, Geoid); /* This converts the height above mean sea level to height above the WGS-84 ellipsoid */
                 else
                     minimum.HeightAboveEllipsoid = minimum.HeightAboveGeoid;
 #ifndef WMMHR
@@ -255,25 +251,25 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
                     print_alt_warning = 1;
                 }
 #endif
-                MAG_GeodeticToSpherical(Ellip, minimum, &CoordSpherical);
-                MAG_ComputeSphericalHarmonicVariables(Ellip, CoordSpherical, MagneticModel->nMax, SphVariables); /* Compute Spherical Harmonic variables  */
-                MAG_AssociatedLegendreFunction(CoordSpherical, MagneticModel->nMax, LegendreFunction); /* Compute ALF  Equations 5-6, WMM Technical report*/
+                GeodeticToSpherical(Ellip, minimum, &CoordSpherical);
+                ComputeSphericalHarmonicVariables(Ellip, CoordSpherical, MagneticModel->nMax, SphVariables); /* Compute Spherical Harmonic variables  */
+                AssociatedLegendreFunction(CoordSpherical, MagneticModel->nMax, LegendreFunction); /* Compute ALF  Equations 5-6, WMM Technical report*/
 
                 for(StartDate.DecimalYear = d; StartDate.DecimalYear <= EndDate.DecimalYear; StartDate.DecimalYear += time_step) /*Year loop*/
                 {
 
-                    MAG_TimelyModifyMagneticModel(StartDate, MagneticModel, TimedMagneticModel); /*This modifies the Magnetic coefficients to the correct date. */
-                    MAG_Summation(LegendreFunction, TimedMagneticModel, *SphVariables, CoordSpherical, &MagneticResultsSph); /* Accumulate the spherical harmonic coefficients Equations 10:12 , WMM Technical report*/
-                    MAG_SecVarSummation(LegendreFunction, TimedMagneticModel, *SphVariables, CoordSpherical, &MagneticResultsSphVar); /*Sum the Secular Variation Coefficients, Equations 13:15 , WMM Technical report  */
-                    MAG_RotateMagneticVector(CoordSpherical, minimum, MagneticResultsSph, &MagneticResultsGeo); /* Map the computed Magnetic fields to Geodetic coordinates Equation 16 , WMM Technical report */
-                    MAG_RotateMagneticVector(CoordSpherical, minimum, MagneticResultsSphVar, &MagneticResultsGeoVar); /* Map the secular variation field components to Geodetic coordinates, Equation 17 , WMM Technical report*/
-                    MAG_CalculateGeoMagneticElements(&MagneticResultsGeo, &GeoMagneticElements); /* Calculate the Geomagnetic elements, Equation 18 , WMM Technical report */
-                    MAG_CalculateGridVariation(minimum, &GeoMagneticElements);
-                    MAG_CalculateSecularVariationElements(MagneticResultsGeoVar, &GeoMagneticElements); /*Calculate the secular variation of each of the Geomagnetic elements, Equation 19, WMM Technical report*/
+                    TimelyModifyMagneticModel(StartDate, MagneticModel, TimedMagneticModel); /*This modifies the Magnetic coefficients to the correct date. */
+                    Summation(LegendreFunction, TimedMagneticModel, *SphVariables, CoordSpherical, &MagneticResultsSph); /* Accumulate the spherical harmonic coefficients Equations 10:12 , WMM Technical report*/
+                    SecVarSummation(LegendreFunction, TimedMagneticModel, *SphVariables, CoordSpherical, &MagneticResultsSphVar); /*Sum the Secular Variation Coefficients, Equations 13:15 , WMM Technical report  */
+                    RotateMagneticVector(CoordSpherical, minimum, MagneticResultsSph, &MagneticResultsGeo); /* Map the computed Magnetic fields to Geodetic coordinates Equation 16 , WMM Technical report */
+                    RotateMagneticVector(CoordSpherical, minimum, MagneticResultsSphVar, &MagneticResultsGeoVar); /* Map the secular variation field components to Geodetic coordinates, Equation 17 , WMM Technical report*/
+                    CalculateGeoMagneticElements(&MagneticResultsGeo, &GeoMagneticElements); /* Calculate the Geomagnetic elements, Equation 18 , WMM Technical report */
+                    CalculateGridVariation(minimum, &GeoMagneticElements);
+                    CalculateSecularVariationElements(MagneticResultsGeoVar, &GeoMagneticElements); /*Calculate the secular variation of each of the Geomagnetic elements, Equation 19, WMM Technical report*/
                     #if WMMHR
-                        MAG_WMMHRErrorCalc(GeoMagneticElements.H, &Errors);
+                        WMMHRErrorCalc(GeoMagneticElements.H, &Errors);
                     #else
-                        MAG_WMMErrorCalc(GeoMagneticElements.H, &Errors);
+                        WMMErrorCalc(GeoMagneticElements.H, &Errors);
                     #endif
                     if(GeoMagneticElements.H <= 2000.0) {
                         print_boz_warning_strong = TRUE;
@@ -282,7 +278,7 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
                     }
                     
                     if(ElementOption >= 17)
-                        MAG_Gradient(Ellip, minimum, TimedMagneticModel, &Gradient);
+                        Gradient(Ellip, minimum, TimedMagneticModel, &Gradient);
 
                     switch(ElementOption) {
                         case 1:
@@ -393,12 +389,12 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
                     
                     if(Geoid->UseGeoid == 1)
                     {
-                        if(PrintOption == 1) fprintf(fileout, "%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambda, minimum.HeightAboveGeoid, StartDate.DecimalYear, PrintElement);
-                        else printf("%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambda, minimum.HeightAboveGeoid, StartDate.DecimalYear, PrintElement);
+                        if(PrintOption == 1) fprintf(fileout, "%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag, minimum.HeightAboveGeoid, StartDate.DecimalYear, PrintElement);
+                        else printf("%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag, minimum.HeightAboveGeoid, StartDate.DecimalYear, PrintElement);
                     } else
                     {
-                        if(PrintOption == 1) fprintf(fileout, "%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambda, minimum.HeightAboveEllipsoid, StartDate.DecimalYear, PrintElement);
-                        else printf("%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambda, minimum.HeightAboveEllipsoid, StartDate.DecimalYear, PrintElement);
+                        if(PrintOption == 1) fprintf(fileout, "%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag, minimum.HeightAboveEllipsoid, StartDate.DecimalYear, PrintElement);
+                        else printf("%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag, minimum.HeightAboveEllipsoid, StartDate.DecimalYear, PrintElement);
                     }
                     if(UncertaintyOption == 1) {
                         if(PrintOption == 1) fprintf(fileout, " %7.2f", ErrorElement);
@@ -408,7 +404,7 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
                     else printf("\n"); /* Complete line */
 
                      /**Below can be used for XYZ Printing format (longitude latitude output_data)
-                     *  fprintf(fileout, "%5.2f %6.2f %10.4f\n", minimum.lambda, minimum.phi, PrintElement); **/
+                     *  fprintf(fileout, "%5.2f %6.2f %10.4f\n", minimum.lambdag, minimum.phi, PrintElement); **/
                         
                 } /* year loop */
 
@@ -447,10 +443,10 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
     }
 
 
-    MAG_FreeMagneticModelMemory(TimedMagneticModel);
-    MAG_FreeLegendreMemory(LegendreFunction);
-    MAG_FreeSphVarMemory(SphVariables);
+    FreeMagneticModelMemory(TimedMagneticModel);
+    FreeLegendreMemory(LegendreFunction);
+    FreeSphVarMemory(SphVariables);
 
     return TRUE;
-} /*MAG_Grid*/
+} /*Grid*/
 

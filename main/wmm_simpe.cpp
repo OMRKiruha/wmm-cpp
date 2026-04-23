@@ -1,13 +1,16 @@
+//
+// Created by Professional on 23.04.2026.
+//
 /*--------------------------------------------------------------------------*/
 
 #include <cmath>
-#include <cstdio>
 #include <iostream>
 #include <string>
 
 #include "GeomagnetismHeader.h"
 
-#include "GeomagInterativeLib.h"
+#include "EGM9615.h"
+ #include "GeomagInterativeLib.h"
 #include "MagneticUtils.h"
 #include "magcalc.h"
 #include "version.h"
@@ -32,52 +35,49 @@
  *
  **/
 
+
 char GeomagIntroduction_WMM(const wmm::MagneticModel &magneticModel, const std::string &modelDate);
 
-void help_info(const wmm::MagneticModel &magneticModel, std::string_view short_name);
+void help_info(const wmm::MagneticModel &magneticModel, const std::string_view short_name);
 
 int main() {
     char ans[20], b;
 
-#ifdef WMMHR
-    const std::string filename{"WMMHR.COF"};
-    const std::string program_name{"wmmhr_point"};
-#else
-    const std::string filename{"WMM.COF"};
-    const std::string program_name{"wmm_point"};
-#endif
+    const std::string filename{"WMM.COF"};  // Coefficients file must be placed in same directory as executable
 
     wmm::MagneticModel magneticModel;
     if(!magneticModel.readModel(filename)) {
-        printf("\n %s not found.  Press enter to exit... \n ", filename.c_str());
-        fgets(ans, 20, stdin);
+        std::cerr << "\n " << filename << " not found.  Press enter to exit... \n ";
+        std::cin.get();
         return 1;
     }
 
-    if(std::isnan(magneticModel.epoch)) {
+    wmm::Date userDate{};  // Default constructor Date using current system date
+    wmm::MagneticModel timedMagneticModel{magneticModel.applyDate(userDate)};
+    if(std::isnan(magneticModel.epoch) || std::isnan(timedMagneticModel.epoch)) {
         wmm::PrintError(2);
     }
 
     // Set EGM96 geoid parameters
-    wmm::Date userDate{};
     wmm::Geoid geoid{};
+
+    // Set EGM96 geoid parameters END
+    b = GeomagIntroduction_WMM(magneticModel, MODEL_RELEASE_DATE);
+
     wmm::Ellipsoid ellip{};
     wmm::CoordGeodetic coordGeodetic;
     wmm::CoordSpherical coordSpherical;
     wmm::GeoMagneticElements geoMagneticElements;
     wmm::GeoMagneticElements errors;
 
-    b = GeomagIntroduction_WMM(magneticModel, MODEL_RELEASE_DATE);
-
     while(b != 'x') {
         //        if(GetUserInput(magneticModel, &geoid, &coordGeodetic, &userDate) == 1) /*Get User Input */
         {
             coordGeodetic.lambda = 48.8;
             coordGeodetic.phi    = 54.4;
-            coordGeodetic.convertGeoidToEllipsoidHeight(geoid);
             // Convert from geodetic to Spherical Equations: 17-18, WMM Technical report
             coordSpherical.fromGeodetic(ellip, coordGeodetic);
-            point_calc(ellip, coordGeodetic, coordSpherical, userDate, magneticModel, &geoMagneticElements, &errors);
+            point_calc(ellip, coordGeodetic, coordSpherical, userDate, timedMagneticModel, &geoMagneticElements, &errors);
 
             if(geoMagneticElements.H <= 2000.0) {
                 std::cout << std::endl << BOZ_WARN_TEXT_STRONG << std::endl;
@@ -92,7 +92,7 @@ int main() {
             }
 #endif
             // Print the results
-            PrintUserDataWithUncertainty(geoMagneticElements, errors, coordGeodetic, userDate, magneticModel, geoid);
+            PrintUserDataWithUncertainty(geoMagneticElements, errors, coordGeodetic, userDate, timedMagneticModel, geoid);
         }
 
         do {
@@ -113,11 +113,7 @@ int main() {
     return 0;
 }
 
-/* Prints the introduction to the Geomagnetic program.  It needs the Magnetic model for the epoch.
- *
- * INPUT  magneticModel		: MagneticModel With Model epoch 	(input)
- * OUTPUT ans   (char)  user selection
- */
+// Prints the introduction to the Geomagnetic program.  It needs the Magnetic model for the epoch.
 char GeomagIntroduction_WMM(const wmm::MagneticModel &magneticModel, const std::string &modelDate) {
     std::string versionDate{VERSIONDATE_LARGE};
     versionDate = versionDate.substr(39, 11);

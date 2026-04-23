@@ -1,11 +1,16 @@
-#include <cassert>
-#include <cctype>
+
 #include <cmath>
 #include <cstdio>
-#include <cstdlib>
 #include <string>
 
+#include "CoordGeodetic.h"
+#include "Date.h"
+#include "GeoMagneticElements.h"
+#include "Geoid.h"
 #include "GeomagInterativeLib.h"
+#include "Gradient.h"
+#include "MagneticModel.h"
+#include "MagneticUtils.h"
 
 namespace wmm {
 
@@ -86,19 +91,20 @@ namespace wmm {
     void GetDeg(std::string_view Query_String, double *latitude, double bounds[2]) {
         /*Gets a degree value from the user using the standard input*/
         std::string buffer;
+        buffer.reserve(65);
         std::string Error_Message;
         int done, i, j;
 
         printf("%s", Query_String.data());
-        while(NULL == fgets(buffer.data(), 64, stdin)) {
+        while(nullptr == fgets(buffer.data(), 64, stdin)) {
             printf("%s", Query_String.data());
-            if(buffer[sizeof(buffer) - 1] != '\n') {
+            if(buffer[64 - 1] != '\n') {
                 clear_input_buffer();  // Remove the left characters from stdin if the buffer is not able to read the
                                        // whole stdin
             }
         }
 
-        for(i = 0, done = 0, j = 0; i < (int)sizeof(buffer) && !done; i++) {
+        for(i = 0, done = 0, j = 0; i < (int)64 && !done; i++) {
             if(buffer[i] == '.') {
                 j = sscanf(buffer.c_str(), "%lf", latitude);
                 if(j == 1) {
@@ -135,7 +141,7 @@ namespace wmm {
                     printf("\nError encountered, please re-enter as '(-)DDD,MM,SS' or in Decimal Degrees DD.ddd:\n");
                     while(NULL == fgets(buffer.data(), 64, stdin)) {
                         printf("\nError encountered, please re-enter as '(-)DDD,MM,SS' or in Decimal Degrees DD.ddd:\n");
-                        if(buffer[sizeof(buffer) - 1] != '\n') {
+                        if(buffer[64 - 1] != '\n') {
                             clear_input_buffer();  // Remove the left characters from stdin if the buffer is not able to
                                                    // read the whole stdin
                         }
@@ -187,7 +193,7 @@ namespace wmm {
             {
                 geoid->UseGeoid = 1;
                 j               = sscanf(buffer.c_str(), "%lf", &coords->HeightAboveGeoid);
-                ConvertGeoidToEllipsoidHeight(coords, geoid);
+                coords->convertGeoidToEllipsoidHeight(*geoid);
                 value = coords->HeightAboveGeoid;
             }
             if(j == 1) {
@@ -226,10 +232,10 @@ namespace wmm {
         return 0;
     }
 
-    void GetMinGridInput(double *coord, double *val_bound, char *var_name) {
-        char buffer[20];
+    void GetMinGridInput(double *coord, double *val_bound, const std::string_view var_name) {
+        std::string buffer;
 
-        if(NULL == fgets(buffer, sizeof(buffer), stdin) || sscanf(buffer, "%lf", coord) != 1) {
+        if(NULL == fgets(buffer.data(), 64, stdin) || sscanf(buffer.data(), "%lf", coord) != 1) {
             *coord = 0;
             printf("Unrecognized input default %lf used\n", *coord);
         }
@@ -239,8 +245,8 @@ namespace wmm {
             printf("Error: Degree input is outside range\n"
                    " The range is from %.2f to %.2f\n",
                    val_bound[0], val_bound[1]);
-            printf("Please re-enter the minimal %s:", var_name);
-            if(NULL == fgets(buffer, 20, stdin) || sscanf(buffer, "%lf", coord) != 1) {
+            printf("Please re-enter the minimal %s:", var_name.data());
+            if(NULL == fgets(buffer.data(), 20, stdin) || sscanf(buffer.data(), "%lf", coord) != 1) {
                 *coord = 0;
                 printf("Unrecognized input default %lf used\n", *coord);
             }
@@ -248,9 +254,9 @@ namespace wmm {
     }
 
     void GetMinGridInputDecYear(double *coord, double *val_bound) {
-        char buffer[20];
+        std::string buffer;
 
-        if(NULL == fgets(buffer, sizeof(buffer), stdin) || sscanf(buffer, "%lf", coord) != 1) {
+        if(NULL == fgets(buffer.data(), 64, stdin) || sscanf(buffer.data(), "%lf", coord) != 1) {
             *coord = 0;
         }
 
@@ -259,9 +265,9 @@ namespace wmm {
                    " The range is from %.2f to %.2f\n",
                    val_bound[0], val_bound[1]);
             printf("Please re-enter the minimal decimal year:");
-            if(NULL == fgets(buffer, 20, stdin) || sscanf(buffer, "%lf", coord) != 1) {
+            if(NULL == fgets(buffer.data(), 20, stdin) || sscanf(buffer.data(), "%lf", coord) != 1) {
                 *coord = 0;
-                if(buffer[sizeof(buffer) - 1] != '\n') {
+                if(buffer[64 - 1] != '\n') {
                     clear_input_buffer();  // Remove the left characters from stdin if the buffer is not able to read the
                                            // whole stdin
                 }
@@ -270,9 +276,9 @@ namespace wmm {
     }
 
     void GetMaxGridInputDecYear(double *coord, double *val_bound) {
-        char buffer[20];
+        std::string buffer;
 
-        if(NULL == fgets(buffer, sizeof(buffer), stdin) || sscanf(buffer, "%lf", coord) != 1) {
+        if(NULL == fgets(buffer.data(), 64, stdin) || sscanf(buffer.data(), "%lf", coord) != 1) {
             *coord = 0;
         }
 
@@ -282,9 +288,9 @@ namespace wmm {
                    " The range is from %.2f to %.2f\n",
                    val_bound[0], val_bound[1]);
             printf("Please re-enter the maximal decimal year:");
-            if(NULL == fgets(buffer, 20, stdin) || sscanf(buffer, "%lf", coord) != 1) {
+            if(NULL == fgets(buffer.data(), 20, stdin) || sscanf(buffer.data(), "%lf", coord) != 1) {
                 *coord = 0;
-                if(buffer[sizeof(buffer) - 1] != '\n') {
+                if(buffer[64 - 1] != '\n') {
                     clear_input_buffer();  // Remove the left characters from stdin if the buffer is not able to read the
                                            // whole stdin
                 }
@@ -293,9 +299,9 @@ namespace wmm {
     }
 
     void GetMaxGridInputAlt(double *coord, double min) {
-        char buffer[20];
+        std::string buffer;
 
-        if(NULL == fgets(buffer, sizeof(buffer), stdin) || sscanf(buffer, "%lf", coord) != 1) {
+        if(NULL == fgets(buffer.data(), 64, stdin) || sscanf(buffer.data(), "%lf", coord) != 1) {
             *coord = 0;
             printf("Unrecognized input default %lf used\n", *coord);
         }
@@ -304,17 +310,17 @@ namespace wmm {
         while(*coord < min) {
             printf("Error maximum altitude is less than minimum altitude\n");
             printf("Please re-enter the maximal altitude:");
-            if(NULL == fgets(buffer, 20, stdin) || sscanf(buffer, "%lf", coord) != 1) {
+            if(NULL == fgets(buffer.data(), 20, stdin) || sscanf(buffer.data(), "%lf", coord) != 1) {
                 *coord = 0;
                 printf("Unrecognized input default %lf used\n", *coord);
             }
         }
     }
 
-    void GetMaxGridInput(double *coord, double *val_bound, char *var_name) {
-        char buffer[20];
+    void GetMaxGridInput(double *coord, double *val_bound, const std::string_view var_name) {
+        std::string buffer;
 
-        if(NULL == fgets(buffer, sizeof(buffer), stdin) || sscanf(buffer, "%lf", coord) != 1) {
+        if(NULL == fgets(buffer.data(), 64, stdin) || sscanf(buffer.data(), "%lf", coord) != 1) {
             *coord = 0;
             printf("Unrecognized input default %lf used\n", *coord);
         }
@@ -324,15 +330,15 @@ namespace wmm {
             printf("Error: Degree input is outside range\n"
                    " The range is from %.2f to %.2f\n",
                    val_bound[0], val_bound[1]);
-            printf("Please re-enter the maximal %s:", var_name);
-            if(NULL == fgets(buffer, 20, stdin) || sscanf(buffer, "%lf", coord) != 1) {
+            printf("Please re-enter the maximal %s:", var_name.data());
+            if(NULL == fgets(buffer.data(), 20, stdin) || sscanf(buffer.data(), "%lf", coord) != 1) {
                 *coord = 0;
                 printf("Unrecognized input default %lf used\n", *coord);
             }
         }
     }
 
-    int GetUserInput(MagneticModel *magneticModel, Geoid *geoid, CoordGeodetic *coordGeodetic, Date *magneticDate)
+    int GetUserInput(const MagneticModel &magneticModel, Geoid *geoid, CoordGeodetic *coordGeodetic, Date *magneticDate)
 
     /*
     This prompts the user for coordinates, and accepts many entry formats.
@@ -344,7 +350,7 @@ namespace wmm {
     HeightABoveEllipsoid
 
     OUTPUT: coordGeodetic : Pointer to data structure. Following elements are updated
-                            double lambda; (longitude)
+                            double lambdag; (longitude)
                             double phi; ( geodetic latitude)
                             double HeightAboveEllipsoid; (height above the ellipsoid (HaE) )
                             double HeightAboveGeoid;(height above the geoid )
@@ -355,7 +361,7 @@ namespace wmm {
                             int	Day; (If user directly enters decimal year this field is not populated)
                             double DecimalYear;      decimal years
 
-    CALLS: 	DMSstringToDegree(buffer, &coordGeodetic->lambda); (The program uses this to convert the string into a
+    CALLS: 	DMSstringToDegree(buffer, &coordGeodetic->lambdag); (The program uses this to convert the string into a
     decimal longitude.) ValidateDMSstringlong(buffer, Error_Message) ValidateDMSstringlat(buffer, Error_Message)
     Warnings ConvertGeoidToEllipsoidHeight DateToYear
 
@@ -363,14 +369,14 @@ namespace wmm {
     {
         std::string Error_Message;
         std::string buffer;
+        buffer.reserve(64);
         int i, j, a, b, c, done = 0;
         double lat_bound[2] = {LAT_BOUND_MIN, LAT_BOUND_MAX};
         double lon_bound[2] = {LON_BOUND_MIN, LON_BOUND_MAX};
         int alt_bound[2]    = {ALT_BOUND_MIN, NO_ALT_MAX};
-        int Qstring_size    = 1028;
-        std::string Qstring;
-        Qstring = "\nPlease enter latitude\nNorth latitude positive, For example:\n30, 30, 30 (D,M,S) or 30.508 "
-                  "(Decimal Degrees) (both are north)\n";
+
+        std::string Qstring{"\nPlease enter latitude\nNorth latitude positive, For example:"
+                            "\n30, 30, 30 (D,M,S) or 30.508 (Decimal Degrees) (both are north)\n"};
         GetDeg(Qstring, &coordGeodetic->phi, lat_bound);
 
         Qstring = "\nPlease enter longitude\nEast longitude positive, West negative.  For example:\n-100.5 or "
@@ -388,7 +394,7 @@ namespace wmm {
             printf("\nPlease enter the decimal year or calendar date\n (YYYY.yyy, MM DD YYYY or MM/DD/YYYY):\n");
         }
 
-        for(i = 0, done = 0; i < sizeof(buffer) && !done; i++) {
+        for(i = 0, done = 0; i < 64 && !done; i++) {
             if(buffer[i] == '.') {
                 j = sscanf(buffer.data(), "%lf", &magneticDate->DecimalYear);
                 if(j == 1) {
@@ -398,44 +404,41 @@ namespace wmm {
                 }
             }
             if(buffer[i] == '/') {
-                sscanf(buffer.c_str(), "%d/%d/%d", &magneticDate->Month, &magneticDate->Day, &magneticDate->Year);
-                if(!DateToYear(magneticDate, Error_Message)) {
-                    printf("%s", Error_Message.c_str());
+                if(!dateStr_to_ymd(buffer, magneticDate->Year, magneticDate->Month, magneticDate->Day)) {
                     printf("\nPlease re-enter Date in MM/DD/YYYY or MM DD YYYY format, or as a decimal year\n");
-                    while(NULL == fgets(buffer.data(), 64, stdin)) {
+                    while(nullptr == fgets(buffer.data(), 64, stdin)) {
                         printf("\nPlease re-enter Date in MM/DD/YYYY or MM DD YYYY format, or as a decimal year\n");
-                        if(buffer[sizeof(buffer) - 1] != '\n') {
+                        if(buffer[64 - 1] != '\n') {
                             clear_input_buffer();  // Remove the left characters from stdin if the buffer is not able to
                                                    // read the whole stdin
                         }
                     }
-
                     i = 0;
                 } else {
+                    magneticDate->calcDecYear();
                     done = 1;
                 }
             }
-            if((i < sizeof(buffer) - 1 && buffer[i] == ' ' && buffer[i + 1] != '/') || buffer[i] == '\0') {
+            if((i < 64 - 1 && buffer[i] == ' ' && buffer[i + 1] != '/') || buffer[i] == '\0') {
                 if(3 == sscanf(buffer.c_str(), "%d %d %d", &a, &b, &c)) {
-                    magneticDate->Month       = a;
-                    magneticDate->Day         = b;
-                    magneticDate->Year        = c;
-                    magneticDate->DecimalYear = 99999;
+                    if(dateStr_to_ymd(buffer, magneticDate->Year, magneticDate->Month, magneticDate->Day)) {
+                        magneticDate->calcDecYear();
+                    }
                 } else if(1 == sscanf(buffer.c_str(), "%d %d %d", &a, &b, &c)) {
                     magneticDate->DecimalYear = a;
                     done                      = 1;
                 }
                 if(!(magneticDate->DecimalYear == a)) {
-                    if(!DateToYear(magneticDate, Error_Message)) {
-                        printf("%s", Error_Message);
-                        strlcpy_equivalent(buffer, "", sizeof(buffer));
+                    if(false /*!DateToYear(magneticDate, Error_Message)*/) {
+                        printf("%s", Error_Message.c_str());
+                        buffer.clear();
                         printf(
                             "\nError encountered, please re-enter Date in MM/DD/YYYY or MM DD YYYY format, or as a decimal "
                             "year\n");
-                        while(NULL == fgets(buffer, sizeof(buffer), stdin)) {
+                        while(NULL == fgets(buffer.data(), 64, stdin)) {
                             printf("\nError encountered, please re-enter Date in MM/DD/YYYY or MM DD YYYY format, or as a "
                                    "decimal year\n");
-                            if(buffer[strlen(buffer) - 1] != '\n') {
+                            if(buffer.back() != '\n') {
                                 clear_input_buffer();
                             }
                         }
@@ -449,9 +452,9 @@ namespace wmm {
             if(buffer[i] == '\0' && i != -1 && done != 1) {
                 buffer.clear();
                 printf("\nError encountered, please re-enter as MM/DD/YYYY, MM DD YYYY, or as YYYY.yyy:\n");
-                while(NULL == fgets(buffer, sizeof(buffer), stdin)) {
+                while(NULL == fgets(buffer.data(), 64, stdin)) {
                     printf("\nError encountered, please re-enter as MM/DD/YYYY, MM DD YYYY, or as YYYY.yyy:\n");
-                    if(buffer[sizeof(buffer) - 1] != '\n') {
+                    if(buffer[64 - 1] != '\n') {
                         clear_input_buffer();  // Remove the left characters from stdin if the buffer is not able to read
                                                // the whole stdin
                     }
@@ -460,21 +463,21 @@ namespace wmm {
                 i = -1;
             }
             if(done) {
-                if(magneticDate->DecimalYear > magneticModel->CoefficientFileEndDate ||
-                   magneticDate->DecimalYear < magneticModel->min_year) {
+                if(magneticDate->DecimalYear > magneticModel.coefficientFileEndDate ||
+                   magneticDate->DecimalYear < magneticModel.min_year) {
                     switch(Warnings(4, magneticDate->DecimalYear, magneticModel)) {
                         case 0:
                             return 0;
                         case 1:
                             done = 0;
                             i    = -1;
-                            strlcpy_equivalent(buffer, "", sizeof(buffer));
+                            buffer.clear();
                             printf("\nPlease enter the decimal year or calendar date\n (YYYY.yyy, MM DD YYYY or "
                                    "MM/DD/YYYY):\n");
-                            while(NULL == fgets(buffer, sizeof(buffer), stdin)) {
+                            while(NULL == fgets(buffer.data(), 64, stdin)) {
                                 printf("\nPlease enter the decimal year or calendar date\n (YYYY.yyy, MM DD YYYY or "
                                        "MM/DD/YYYY):\n");
-                                if(buffer[sizeof(buffer) - 1] != '\n') {
+                                if(buffer[64 - 1] != '\n') {
                                     clear_input_buffer();  // Remove the left characters from stdin if the buffer is not
                                                            // able to read the whole stdin
                                 }
@@ -487,39 +490,33 @@ namespace wmm {
                 }
             }
         }
-        free(Qstring);
         return true;
     } /*GetUserInput*/
 
-    int GetUserGrid(CoordGeodetic *minimum, CoordGeodetic *maximum, double *step_size, double *a_step_size,
-                    double *step_time, Date *StartDate, Date *EndDate, int *ElementOption, int *PrintOption,
-                    char *OutputFile, Geoid *Geoid, MagneticModel *model)
-
-    /* Prompts user to enter parameters to compute a grid - for use with the grid function
-    Note: The user entries are not validated before here. The function populates the input variables & data structures.
+    /** Prompts user to enter parameters to compute a grid - for use with the grid function
+Note: The user entries are not validated before here. The function populates the input variables & data structures.
 
     UPDATE : minimum Pointer to data structure with the following elements
-                    double lambda; (longitude)
-                    double phi; ( geodetic latitude)
-                    double HeightAboveEllipsoid; (height above the ellipsoid (HaE) )
-                    double HeightAboveGeoid;(height above the Geoid )
+             double lambdag; (longitude)
+        double phi; ( geodetic latitude)
+        double HeightAboveEllipsoid; (height above the ellipsoid (HaE) )
+        double HeightAboveGeoid;(height above the Geoid )
 
-                    maximum   -same as the above -USE_GEOID
-                    step_size  : double pointer : spatial step size, in decimal degrees
-                    a_step_size : double pointer :  double altitude step size (km)
-                    step_time : double pointer : time step size (decimal years)
-                    StartDate : pointer to data structure with the following elements updates
-                                            double DecimalYear;     ( decimal years )
-                    EndDate :	Same as the above
-    CALLS : none
+            maximum   -same as the above -USE_GEOID
+                                step_size  : double pointer : spatial step size, in decimal degrees
+            a_step_size : double pointer :  double altitude step size (km)
+                                               step_time : double pointer : time step size (decimal years)
+                                                                                StartDate : pointer to data structure with
+the following elements updates double DecimalYear;     ( decimal years ) EndDate :	Same as the above CALLS : none
 
 
-     */
-    {
+    */
+    int GetUserGrid(CoordGeodetic *minimum, CoordGeodetic *maximum, double *step_size, double *a_step_size,
+                    double *step_time, Date *StartDate, Date *EndDate, int *ElementOption, int *PrintOption,
+                    char *OutputFile, Geoid *Geoid, MagneticModel *model) {
         FILE *fileout;
         char filename[] = "GridProgramDirective.txt";
-        char buffer[20];
-        int strcopy_size         = 32;
+        std::string buffer;
         char default_outfile[16] = "GridResults.txt";
 
         int dummy;
@@ -528,44 +525,44 @@ namespace wmm {
 
 
         printf("Please Enter Minimum Latitude (in decimal degrees):\n");
-        char var_name[20] = "latitude";
+        std::string var_name{"latitude"};
         GetMinGridInput(&minimum->phi, lat_bound, var_name);
 
-        strlcpy_equivalent(buffer, "", sizeof(buffer));
+        buffer.clear();
         lat_bound[0] = minimum->phi;
         printf("Please Enter Maximum Latitude (in decimal degrees):\n");
         GetMaxGridInput(&maximum->phi, lat_bound, var_name);
 
-        strlcpy_equivalent(buffer, "", sizeof(buffer));
+        buffer.clear();
         printf("Please Enter Minimum Longitude (in decimal degrees):\n");
-        strlcpy_equivalent(var_name, "lontitude", sizeof(var_name));
+        var_name = "lontitude";
         GetMinGridInput(&minimum->lambda, lon_bound, var_name);
 
-        strlcpy_equivalent(buffer, "", sizeof(buffer));
+        buffer.clear();
         lon_bound[0] = minimum->lambda;
         printf("Please Enter Maximum Longitude (in decimal degrees):\n");
         GetMaxGridInput(&maximum->lambda, lon_bound, var_name);
 
-        strlcpy_equivalent(buffer, "", sizeof(buffer));
+        buffer.clear();
         printf("Please Enter Step Size (in decimal degrees):\n");
-        if(NULL == fgets(buffer, sizeof(buffer), stdin) || sscanf(buffer, "%lf", step_size) != 1) {
+        if(NULL == fgets(buffer.data(), 64, stdin) || sscanf(buffer.data(), "%lf", step_size) != 1) {
             *step_size = fmax(maximum->phi - minimum->phi, maximum->lambda - minimum->lambda);
             printf("Unrecognized input default %lf used\n", *step_size);
 
         } else {
-            sscanf(buffer, "%lf", step_size);
+            sscanf(buffer.data(), "%lf", step_size);
         }
 
 
-        strlcpy_equivalent(buffer, "", sizeof(buffer));
+        buffer.clear();
 
         printf("Select height (default : above MSL) \n1. Above Mean Sea Level\n2. Above WGS-84 Ellipsoid \n");
-        if(NULL == fgets(buffer, sizeof(buffer), stdin)) {
+        if(NULL == fgets(buffer.data(), 64, stdin)) {
             Geoid->UseGeoid = 1;
             printf("Unrecognized option, height above MSL used.");
 
         } else {
-            sscanf(buffer, "%d", &dummy);
+            sscanf(buffer.data(), "%d", &dummy);
             if(dummy == 2) {
                 Geoid->UseGeoid = 0;
             } else {
@@ -574,123 +571,119 @@ namespace wmm {
         }
 
 
-        strlcpy_equivalent(buffer, "", sizeof(buffer));
+        buffer.clear();
         if(Geoid->UseGeoid == 1) {
             printf("Please Enter Minimum Height above MSL (in km):\n");
-            if(NULL == fgets(buffer, sizeof(buffer), stdin) || sscanf(buffer, "%lf", &minimum->HeightAboveGeoid) != 1) {
+            if(NULL == fgets(buffer.data(), 64, stdin) || sscanf(buffer.data(), "%lf", &minimum->HeightAboveGeoid) != 1) {
                 minimum->HeightAboveGeoid = 0;
                 printf("Unrecognized input default %lf used\n", minimum->HeightAboveGeoid);
             } else {
-                sscanf(buffer, "%lf", &minimum->HeightAboveGeoid);
+                sscanf(buffer.data(), "%lf", &minimum->HeightAboveGeoid);
             }
-            strlcpy_equivalent(buffer, "", sizeof(buffer));
+            buffer.clear();
             printf("Please Enter Maximum Height above MSL (in km):\n");
             GetMaxGridInputAlt(&maximum->HeightAboveGeoid, minimum->HeightAboveGeoid);
-            strlcpy_equivalent(buffer, "", sizeof(buffer));
+            buffer.clear();
 
         } else {
             printf("Please Enter Minimum Height above the WGS-84 Ellipsoid (in km):\n");
-            if(NULL == fgets(buffer, sizeof(buffer), stdin) || sscanf(buffer, "%lf", &maximum->HeightAboveGeoid) != 1) {
+            if(NULL == fgets(buffer.data(), 64, stdin) || sscanf(buffer.data(), "%lf", &maximum->HeightAboveGeoid) != 1) {
                 maximum->HeightAboveGeoid = 0;
                 printf("Unrecognized input default %lf used\n", maximum->HeightAboveGeoid);
-
-
             } else {
-                sscanf(buffer, "%lf", &minimum->HeightAboveGeoid);
+                sscanf(buffer.data(), "%lf", &minimum->HeightAboveGeoid);
             }
 
-            strlcpy_equivalent(buffer, "", sizeof(buffer));
+            buffer.clear();
             printf("Please Enter Maximum Height above the WGS-84 Ellipsoid (in km):\n");
             GetMaxGridInputAlt(&maximum->HeightAboveGeoid, minimum->HeightAboveGeoid);
-            strlcpy_equivalent(buffer, "", sizeof(buffer));
+            buffer.clear();
         }
         printf("Please Enter height step size (in km):\n");
-        if(NULL == fgets(buffer, sizeof(buffer), stdin) || sscanf(buffer, "%lf", a_step_size) != 1) {
+        if(NULL == fgets(buffer.data(), 64, stdin) || sscanf(buffer.data(), "%lf", a_step_size) != 1) {
             *a_step_size = maximum->HeightAboveGeoid - minimum->HeightAboveGeoid;
             printf("Unrecognized input default %lf used\n", *a_step_size);
 
         } else {
-            sscanf(buffer, "%lf", a_step_size);
+            sscanf(buffer.data(), "%lf", a_step_size);
         }
 
-        strlcpy_equivalent(buffer, "", sizeof(buffer));
+        buffer.clear();
 
-        double dec_year_bound[2] = {model->min_year, model->CoefficientFileEndDate};
+        double dec_year_bound[2] = {model->min_year, model->coefficientFileEndDate};
         printf("\nPlease Enter the decimal year starting time:\n");
         GetMinGridInputDecYear(&StartDate->DecimalYear, dec_year_bound);
 
-        strlcpy_equivalent(buffer, "", sizeof(buffer));
+        buffer.clear();
 
         dec_year_bound[0] = StartDate->DecimalYear;
         printf("Please Enter the decimal year ending time:\n");
         GetMaxGridInputDecYear(&EndDate->DecimalYear, dec_year_bound);
 
-        strlcpy_equivalent(buffer, "", sizeof(buffer));
+        buffer.clear();
         printf("Please Enter the time step size:\n");
-        if(NULL == fgets(buffer, sizeof(buffer), stdin) || sscanf(buffer, "%lf", step_time) != 1) {
+        if(NULL == fgets(buffer.data(), 64, stdin) || sscanf(buffer.data(), "%lf", step_time) != 1) {
             *step_time = EndDate->DecimalYear - StartDate->DecimalYear;
             printf("Unrecognized input, default of %lf used\n", *step_time);
 
         } else {
-            sscanf(buffer, "%lf", step_time);
+            sscanf(buffer.data(), "%lf", step_time);
         }
 
 
-        strlcpy_equivalent(buffer, "", sizeof(buffer));
+        buffer.clear();
         printf("Enter a geomagnetic element to print. Your options are:\n");
         printf(" 1. Declination	9.   Ddot\n 2. Inclination	10. Idot\n 3. F		11. Fdot\n 4. H		12. Hdot\n 5. X		13. "
                "Xdot\n 6. Y		14. Ydot\n 7. Z		15. Zdot\n 8. GV		16. GVdot\nFor gradients enter: 17\n");
-        if(NULL == fgets(buffer, sizeof(buffer), stdin)) {
+        if(NULL == fgets(buffer.data(), 64, stdin)) {
             *ElementOption = 1;
             printf("Unrecognized input, default of %d used\n", *ElementOption);
         }
-        sscanf(buffer, "%d", ElementOption);
+        sscanf(buffer.data(), "%d", ElementOption);
 
 
-        strlcpy_equivalent(buffer, "", sizeof(buffer));
+        buffer.clear();
         if(*ElementOption == 17) {
             printf("Enter a gradient element to print. Your options are:\n");
             printf(" 1. dX/dphi \t2. dY/dphi \t3. dZ/dphi\n");
             printf(" 4. dX/dlambda \t5. dY/dlambda \t6. dZ/dlambda\n");
             printf(" 7. dX/dz \t8. dY/dz \t9. dZ/dz\n");
-            strlcpy_equivalent(buffer, "", sizeof(buffer));
-            if(NULL == fgets(buffer, 20, stdin)) {
+            buffer.clear();
+            if(NULL == fgets(buffer.data(), 20, stdin)) {
                 *ElementOption = 1;
                 printf("Unrecognized input, default of %d used\n", *ElementOption);
             } else {
-                sscanf(buffer, "%d", ElementOption);
+                sscanf(buffer.data(), "%d", ElementOption);
             }
-            strlcpy_equivalent(buffer, "", sizeof(buffer));
+            buffer.clear();
             *ElementOption += 16;
         }
         printf("Select output :\n");
         printf(" 1. Print to a file \n 2. Print to Screen\n");
-        if(NULL == fgets(buffer, sizeof(buffer), stdin)) {
+        if(NULL == fgets(buffer.data(), 64, stdin)) {
             *PrintOption = 2;
             printf("Unrecognized input, default of printing to screen\n");
 
         } else {
-            sscanf(buffer, "%d", PrintOption);
+            sscanf(buffer.data(), "%d", PrintOption);
         }
 
 
-        strlcpy_equivalent(buffer, "", sizeof(buffer));
+        buffer.clear();
         fileout = fopen(filename, "a");
         if(*PrintOption == 1) {
             printf("Please enter output filename\nfor default ('%s') press enter:\n", default_outfile);
-            if(NULL == fgets(buffer, sizeof(buffer), stdin) || strlen(buffer) <= 1) {
+            if(NULL == fgets(buffer.data(), 64, stdin) || buffer.length() <= 1) {
                 fprintf(fileout, "\nResults printed in: %s\n", default_outfile);
                 // The size of OutputFile is 32 which is defined in #127 in GeomagnetismHeader.h
-                strcopy_size = (sizeof(default_outfile) > 32) ? 32 : sizeof(default_outfile);
-                strlcpy_equivalent(OutputFile, "GridResults.txt", strcopy_size);
-
+                OutputFile = "GridResults.txt";
             } else {
-                sscanf(buffer, "%s", OutputFile);
+                sscanf(buffer.data(), "%s", OutputFile);
                 fprintf(fileout, "\nResults printed in: %s\n", OutputFile);
             }
             /*strcpy(OutputFile, buffer);*/
 
-            strlcpy_equivalent(buffer, "", sizeof(buffer));
+            buffer.clear();
             /*sscanf(buffer, "%s", OutputFile);*/
         } else {
             fprintf(fileout, "\nResults printed in Console\n");
@@ -713,4 +706,314 @@ namespace wmm {
         fclose(fileout);
         return true;
     }
+
+    void printCoord(const CoordGeodetic &coord, const int useGeoid) {
+        printf("\n Results For \n\n");
+        if(coord.phi < 0) {
+            printf("Latitude	%.2fS\n", -coord.phi);
+        } else {
+            printf("Latitude	%.2fN\n", coord.phi);
+        }
+        if(coord.lambda < 0) {
+            printf("Longitude	%.2fW\n", -coord.lambda);
+        } else {
+            printf("Longitude	%.2fE\n", coord.lambda);
+        }
+        if(useGeoid == 1) {
+            printf("Altitude:	%.2f Kilometers above MSL\n", coord.HeightAboveGeoid);
+        } else {
+            printf("Altitude:	%.2f Kilometers above WGS-84 Ellipsoid\n", coord.HeightAboveEllipsoid);
+        }
+    }
+
+    void PrintUserDataWithUncertainty(const GeoMagneticElements &geomagElements, const GeoMagneticElements &Errors,
+                                      const CoordGeodetic &spaceInput, const Date &TimeInput,
+                                      const MagneticModel &magneticModel, const Geoid &Geoid) {
+        std::string DeclString;
+        std::string InclString;
+        std::string GVString;
+
+        DegreeToDMSstring(geomagElements.Incl, 2, InclString);
+        //        DegreeToDMSstring(geomagElements.Decl, 2, DeclString);
+        DeclString = std::to_string(geomagElements.Decl);
+
+        if(geomagElements.H < 6000 && geomagElements.H > 2000) {
+            Warnings(1, geomagElements.H, magneticModel);
+        }
+        if(geomagElements.H < 2000) {
+            Warnings(2, geomagElements.H, magneticModel);
+        }
+
+        printCoord(spaceInput, Geoid.UseGeoid);
+        printf("Date:		%.1f \t\t %d/%d/%d\n", TimeInput.DecimalYear, TimeInput.Day, TimeInput.Month, TimeInput.Year);
+
+        if(magneticModel.secularVariationUsed == true) {
+            printf("\n		Main Field\t\t\tSecular Change\n");
+            printf("F	=	%9.1f +/- %5.1f nT\t\t Fdot = %5.1f\tnT/yr\n", geomagElements.F, Errors.F, geomagElements.Fdot);
+            printf("H	=	%9.1f +/- %5.1f nT\t\t Hdot = %5.1f\tnT/yr\n", geomagElements.H, Errors.H, geomagElements.Hdot);
+            printf("X	=	%9.1f +/- %5.1f nT\t\t Xdot = %5.1f\tnT/yr\n", geomagElements.X, Errors.X, geomagElements.Xdot);
+            printf("Y	=	%9.1f +/- %5.1f nT\t\t Ydot = %5.1f\tnT/yr\n", geomagElements.Y, Errors.Y, geomagElements.Ydot);
+            printf("Z	=	%9.1f +/- %5.1f nT\t\t Zdot = %5.1f\tnT/yr\n", geomagElements.Z, Errors.Z, geomagElements.Zdot);
+
+            if(geomagElements.Decl < 0) {
+                printf("Decl	=%20s  (WEST) +/-%3.0f Min Ddot = %.1f\tMin/yr\n", DeclString.c_str(), 60 * Errors.Decl,
+                       60 * geomagElements.Decldot);
+            } else {
+                printf("Decl	=%20s  (EAST) +/-%3.0f Min Ddot = %.1f\tMin/yr\n", DeclString.c_str(), 60 * Errors.Decl,
+                       60 * geomagElements.Decldot);
+            }
+            if(geomagElements.Incl < 0) {
+                printf("Incl	=%20s  (UP)   +/-%3.0f Min Idot = %.1f\tMin/yr\n", InclString.c_str(), 60 * Errors.Incl,
+                       60 * geomagElements.Incldot);
+            } else {
+                printf("Incl	=%20s  (DOWN) +/-%3.0f Min Idot = %.1f\tMin/yr\n", InclString.c_str(), 60 * Errors.Incl,
+                       60 * geomagElements.Incldot);
+            }
+        } else {
+            printf("\n	Main Field\n");
+            printf("F	=	%-9.1f +/-%5.1f nT\n", geomagElements.F, Errors.F);
+            printf("H	=	%-9.1f +/-%5.1f nT\n", geomagElements.H, Errors.H);
+            printf("X	=	%-9.1f +/-%5.1f nT\n", geomagElements.X, Errors.X);
+            printf("Y	=	%-9.1f +/-%5.1f nT\n", geomagElements.Y, Errors.Y);
+            printf("Z	=	%-9.1f +/-%5.1f nT\n", geomagElements.Z, Errors.Z);
+
+            if(geomagElements.Decl < 0) {
+                printf("Decl	=%20s  (WEST)+/-%4f\n", DeclString.c_str(), 60 * Errors.Decl);
+            } else {
+                printf("Decl	=%20s  (EAST)+/-%4f\n", DeclString.c_str(), 60 * Errors.Decl);
+            }
+            if(geomagElements.Incl < 0) {
+                printf("Incl	=%20s  (UP)+/-%4f\n", InclString.c_str(), 60 * Errors.Incl);
+            } else {
+                printf("Incl	=%20s  (DOWN)+/-%4f\n", InclString.c_str(), 60 * Errors.Incl);
+            }
+        }
+
+        DegreeToDMSstring(geomagElements.GV, 2, GVString);
+
+        /* Print Grid Variation */
+
+        if(spaceInput.phi < -55) {
+            printf("\n\n Grid variation (SOUTH) =%20s\n", GVString.c_str());
+        } else if(spaceInput.phi > 55) {
+            printf("\n\n Grid variation (NORTH) =%20s \n", GVString.c_str());
+        }
+    } /*PrintUserDataWithUncertainty*/
+
+    void PrintWMMFormat(char *filename, const MagneticModel &magneticModel) {
+        int index;
+        FILE *OUT;
+        Date Date;
+        char Datestring[11];
+
+        Date.DecimalYear = magneticModel.editionDate;
+        //        YearToDate(&Date);
+        sprintf(Datestring, "%d/%d/%d", Date.Month, Date.Day, Date.Year);
+        OUT = fopen(filename, "w");
+        fprintf(OUT, "    %.1f               %s              %s\n", magneticModel.epoch, magneticModel.modelName.c_str(),
+                Datestring);
+        for(int n = 1; n <= magneticModel.nMax; n++) {
+            for(int m = 0; m <= n; m++) {
+                index = (n * (n + 1) / 2 + m);
+                if(m != 0) {
+                    fprintf(OUT, " %2d %2d %9.4f %9.4f  %9.4f %9.4f\n", n, m, magneticModel.main_Field_Coeff_G[index],
+                            magneticModel.main_Field_Coeff_H[index], magneticModel.secular_Var_Coeff_G[index],
+                            magneticModel.secular_Var_Coeff_H[index]);
+                } else {
+                    fprintf(OUT, " %2d %2d %9.4f %9.4f  %9.4f %9.4f\n", n, m, magneticModel.main_Field_Coeff_G[index], 0.0,
+                            magneticModel.secular_Var_Coeff_G[index], 0.0);
+                }
+            }
+        }
+        fclose(OUT);
+    } /*PrintWMMFormat*/
+
+    void PrintEMMFormat(char *filename, char *filenameSV, const MagneticModel &magneticModel) {
+        int index, n, m;
+        FILE *OUT;
+        Date Date;
+        char Datestring[11];
+
+        Date.DecimalYear = magneticModel.editionDate;
+        //        YearToDate(&Date);
+        sprintf(Datestring, "%d/%d/%d", Date.Month, Date.Day, Date.Year);
+        OUT = fopen(filename, "w");
+        fprintf(OUT, "    %.1f               %s              %s\n", magneticModel.epoch, magneticModel.modelName.c_str(),
+                Datestring);
+        for(n = 1; n <= magneticModel.nMax; n++) {
+            for(m = 0; m <= n; m++) {
+                index = (n * (n + 1) / 2 + m);
+                if(m != 0) {
+                    fprintf(OUT, " %2d %2d %9.4f %9.4f\n", n, m, magneticModel.main_Field_Coeff_G[index],
+                            magneticModel.main_Field_Coeff_H[index]);
+                } else {
+                    fprintf(OUT, " %2d %2d %9.4f %9.4f\n", n, m, magneticModel.main_Field_Coeff_G[index], 0.0);
+                }
+            }
+        }
+        fclose(OUT);
+        OUT = fopen(filenameSV, "w");
+        for(n = 1; n <= magneticModel.nMaxSecVar; n++) {
+            for(m = 0; m <= n; m++) {
+                index = (n * (n + 1) / 2 + m);
+                if(m != 0) {
+                    fprintf(OUT, " %2d %2d %9.4f %9.4f\n", n, m, magneticModel.secular_Var_Coeff_G[index],
+                            magneticModel.secular_Var_Coeff_H[index]);
+                } else {
+                    fprintf(OUT, " %2d %2d %9.4f %9.4f\n", n, m, magneticModel.secular_Var_Coeff_G[index], 0.0);
+                }
+            }
+        }
+        fclose(OUT);
+    } /*PrintEMMFormat*/
+
+    void PrintSHDFFormat(char *filename, MagneticModel *(*magneticModel)[], int epochs) {
+        int i, n, m, index, epochRange;
+        FILE *SHDF_file;
+        SHDF_file = fopen(filename, "w");
+        /*lines = (int)(UFM_DEGREE / 2.0 * (UFM_DEGREE + 3));*/
+        for(i = 0; i < epochs; i++) {
+            if(i < epochs - 1) {
+                epochRange = (*magneticModel)[i + 1]->epoch - (*magneticModel)[i]->epoch;
+            } else {
+                epochRange = (*magneticModel)[i]->epoch - (*magneticModel)[i - 1]->epoch;
+            }
+            fprintf(SHDF_file, "%%SHDF 16695 Definitive Geomagnetic Reference Field Model Coefficient File\n");
+            fprintf(SHDF_file, "%%ModelName: %s\n", (*magneticModel)[i]->modelName.c_str());
+            fprintf(SHDF_file,
+                    "%%Publisher: International Association of Geomagnetism and Aeronomy (IAGA), Working Group V-Mod\n");
+            fprintf(SHDF_file, "%%ReleaseDate: Some Number\n");
+            fprintf(SHDF_file, "%%DataCutOFF: Some Other Number\n");
+            fprintf(SHDF_file, "%%ModelStartYear: %d\n", (int)(*magneticModel)[i]->epoch);
+            fprintf(SHDF_file, "%%ModelEndYear: %d\n", (int)(*magneticModel)[i]->epoch + epochRange);
+            fprintf(SHDF_file, "%%Epoch: %.0f\n", (*magneticModel)[i]->epoch);
+            fprintf(SHDF_file, "%%IntStaticDeg: %d\n", (*magneticModel)[i]->nMax);
+            fprintf(SHDF_file, "%%IntSecVarDeg: %d\n", (*magneticModel)[i]->nMaxSecVar);
+            fprintf(SHDF_file, "%%ExtStaticDeg: 0\n");
+            fprintf(SHDF_file, "%%ExtSecVarDeg: 0\n");
+            fprintf(SHDF_file, "%%Normalization: Schmidt semi-normailized\n");
+            fprintf(SHDF_file, "%%SpatBasFunc: spherical harmonics\n");
+            fprintf(SHDF_file, "# To synthesize the field for a given date:\n");
+            fprintf(SHDF_file, "# Use the sub-model of the epoch corresponding to each date\n");
+            fprintf(SHDF_file, "#\n#\n#\n#\n# I/E, n, m, Gnm, Hnm, SV-Gnm, SV-Hnm\n#\n");
+            n = 1;
+            m = 0;
+            for(n = 1; n <= (*magneticModel)[i]->nMax; n++) {
+                for(m = 0; m <= n; m++) {
+                    index = (n * (n + 1)) / 2 + m;
+                    if(i < epochs - 1) {
+                        if(m != 0) {
+                            fprintf(SHDF_file, "I,%d,%d,%f,%f,%f,%f\n", n, m, (*magneticModel)[i]->main_Field_Coeff_G[index],
+                                    (*magneticModel)[i]->main_Field_Coeff_H[index],
+                                    (*magneticModel)[i]->secular_Var_Coeff_G[index],
+                                    (*magneticModel)[i]->secular_Var_Coeff_H[index]);
+                        } else {
+                            fprintf(SHDF_file, "I,%d,%d,%f,,%f,\n", n, m, (*magneticModel)[i]->main_Field_Coeff_G[index],
+                                    (*magneticModel)[i]->secular_Var_Coeff_G[index]);
+                        }
+                    } else {
+                        if(m != 0) {
+                            fprintf(SHDF_file, "I,%d,%d,%f,%f,%f,%f\n", n, m, (*magneticModel)[i]->main_Field_Coeff_G[index],
+                                    (*magneticModel)[i]->main_Field_Coeff_H[index],
+                                    (*magneticModel)[i]->secular_Var_Coeff_G[index],
+                                    (*magneticModel)[i]->secular_Var_Coeff_H[index]);
+                        } else {
+                            fprintf(SHDF_file, "I,%d,%d,%f,,%f,\n", n, m, (*magneticModel)[i]->main_Field_Coeff_G[index],
+                                    (*magneticModel)[i]->secular_Var_Coeff_G[index]);
+                        }
+                    }
+                }
+            }
+        }
+    } /*PrintSHDFFormat*/
+
+    void PrintGradient(const Gradient &gradient) {
+        printf("\nGradient\n");
+        printf("\n                 Northward       Eastward        Downward\n");
+        printf("X:           %7.1f nT/km %9.1f nT/km %9.1f nT/km \n", gradient.GradPhi.X, gradient.GradLambda.X,
+               gradient.GradZ.X);
+        printf("Y:           %7.1f nT/km %9.1f nT/km %9.1f nT/km \n", gradient.GradPhi.Y, gradient.GradLambda.Y,
+               gradient.GradZ.Y);
+        printf("Z:           %7.1f nT/km %9.1f nT/km %9.1f nT/km \n", gradient.GradPhi.Z, gradient.GradLambda.Z,
+               gradient.GradZ.Z);
+        printf("H:           %7.1f nT/km %9.1f nT/km %9.1f nT/km \n", gradient.GradPhi.H, gradient.GradLambda.H,
+               gradient.GradZ.H);
+        printf("F:           %7.1f nT/km %9.1f nT/km %9.1f nT/km \n", gradient.GradPhi.F, gradient.GradLambda.F,
+               gradient.GradZ.F);
+        printf("Declination: %7.2f min/km %8.2f min/km %8.2f min/km \n", gradient.GradPhi.Decl * 60,
+               gradient.GradLambda.Decl * 60, gradient.GradZ.Decl * 60);
+        printf("Inclination: %7.2f min/km %8.2f min/km %8.2f min/km \n", gradient.GradPhi.Incl * 60,
+               gradient.GradLambda.Incl * 60, gradient.GradZ.Incl * 60);
+    }
+
+    /** This function prints the results in  Geomagnetic Elements for a point calculation. It takes the calculated
+     *  Geomagnetic elements "GeomagElements" as input.
+     *  As well as the coordinates, date, and Magnetic Model.
+     * INPUT :  GeomagElements
+     *          CoordGeodetic
+     *          Date
+     *          MagneticModel
+     * OUTPUT : none
+     */
+    void PrintUserData(const GeoMagneticElements &geomagElements, const CoordGeodetic &spaceInput, const Date &timeInput,
+                       const MagneticModel &magneticModel, const Geoid &geoid) {
+        std::string DeclString;
+        std::string InclString;
+        DegreeToDMSstring(geomagElements.Incl, 2, InclString);
+        if(geomagElements.H < 6000 && geomagElements.H > 2000) {
+            Warnings(1, geomagElements.H, magneticModel);
+        }
+        if(geomagElements.H < 2000) {
+            Warnings(2, geomagElements.H, magneticModel);
+        }
+
+        printCoord(spaceInput, geoid.UseGeoid);
+
+        DegreeToDMSstring(geomagElements.Decl, 2, DeclString);
+        if(magneticModel.secularVariationUsed == true) {
+            printf("Date:		%.1f\n", timeInput.DecimalYear);
+            printf("\n		Main Field\t\t\tSecular Change\n");
+            printf("F	=	%-9.1f nT\t\t  Fdot = %.1f\tnT/yr\n", geomagElements.F, geomagElements.Fdot);
+            printf("H	=	%-9.1f nT\t\t  Hdot = %.1f\tnT/yr\n", geomagElements.H, geomagElements.Hdot);
+            printf("X	=	%-9.1f nT\t\t  Xdot = %.1f\tnT/yr\n", geomagElements.X, geomagElements.Xdot);
+            printf("Y	=	%-9.1f nT\t\t  Ydot = %.1f\tnT/yr\n", geomagElements.Y, geomagElements.Ydot);
+            printf("Z	=	%-9.1f nT\t\t  Zdot = %.1f\tnT/yr\n", geomagElements.Z, geomagElements.Zdot);
+            if(geomagElements.Decl < 0) {
+                printf("Decl	=%20s  (WEST)\t  Ddot = %.1f\tMin/yr\n", DeclString.c_str(), 60 * geomagElements.Decldot);
+            } else {
+                printf("Decl	=%20s  (EAST)\t  Ddot = %.1f\tMin/yr\n", DeclString.c_str(), 60 * geomagElements.Decldot);
+            }
+            if(geomagElements.Incl < 0) {
+                printf("Incl	=%20s  (UP)\t  Idot = %.1f\tMin/yr\n", InclString.c_str(), 60 * geomagElements.Incldot);
+            } else {
+                printf("Incl	=%20s  (DOWN)\t  Idot = %.1f\tMin/yr\n", InclString.c_str(), 60 * geomagElements.Incldot);
+            }
+        } else {
+            printf("Date:		%.1f\n", timeInput.DecimalYear);
+            printf("\n	Main Field\n");
+            printf("F	=	%-9.1f nT\n", geomagElements.F);
+            printf("H	=	%-9.1f nT\n", geomagElements.H);
+            printf("X	=	%-9.1f nT\n", geomagElements.X);
+            printf("Y	=	%-9.1f nT\n", geomagElements.Y);
+            printf("Z	=	%-9.1f nT\n", geomagElements.Z);
+            if(geomagElements.Decl < 0) {
+                printf("Decl	=%20s  (WEST)\n", DeclString.c_str());
+            } else {
+                printf("Decl	=%20s  (EAST)\n", DeclString.c_str());
+            }
+            if(geomagElements.Incl < 0) {
+                printf("Incl	=%20s  (UP)\n", InclString.c_str());
+            } else {
+                printf("Incl	=%20s  (DOWN)\n", InclString.c_str());
+            }
+        }
+
+        if(spaceInput.phi <= -55 || spaceInput.phi >= 55)
+        /* Print Grid Variation */
+        {
+            DegreeToDMSstring(geomagElements.GV, 2, InclString);
+            printf("\n\n Grid variation =%20s\n", InclString.c_str());
+        }
+
+    } /*PrintUserData*/
 }  // namespace wmm

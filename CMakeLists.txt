@@ -8,11 +8,25 @@ set(Green "${Esc}[32m")
 set(Yellow "${Esc}[33m")
 set(Blue "${Esc}[34m")
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 
 file(GLOB_RECURSE SOURCES "include/*" "src/*")
 #message("\n${Yellow}==> Project: ${PROJECT_NAME} (${CMAKE_CURRENT_LIST_DIR}) ${ColourReset}")
 #message("\n${Yellow}==> Sources: ${SOURCES} ${ColourReset}")
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
-target_include_directories(${PROJECT_NAME} PUBLIC "include")
+target_include_directories(${PROJECT_NAME} PUBLIC "include" "src")
+
+add_executable(wmm_file "./main/wmm_file.cpp")
+target_link_libraries(wmm_file PRIVATE ${PROJECT_NAME})
+
+add_executable(wmm_grid "./main/wmm_grid.cpp")
+target_link_libraries(wmm_grid PRIVATE ${PROJECT_NAME})
+
+add_executable(wmm_point "./main/wmm_point.cpp")
+target_link_libraries(wmm_point PRIVATE ${PROJECT_NAME})
+
+add_custom_command(
+        TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_LIST_DIR}/data/WMM.COF" "${CMAKE_BINARY_DIR}/WMM.COF"
+)
