@@ -84,8 +84,8 @@ int main()
 
     SetDefaults(&Ellip, &Geoid);
     /* Set EGM96 Geoid parameters */
-    Geoid.GeoidHeightBuffer = std::make_unique<wmm::Geoid::GeoidHeightArray_t>(GeoidHeightBuffer);
-    Geoid.Geoid_Initialized = 1;
+    Geoid.geoidHeightBuffer = std::make_unique<wmm::Geoid::GeoidHeightArray_t>(GeoidHeightBuffer);
+    Geoid.isGeoidInitialized = 1;
     /* Set EGM96 Geoid parameters END */
     #ifdef WMMHR
         printf("\n\n Welcome to the World Magnetic Model High-Resolution(WMMHR) %d C-Program\n",(int) MagneticModels[0]->epoch);
@@ -132,14 +132,14 @@ is either printed to the file GridResults.txt or to the screen depending on user
 INPUT: minimum :Data structure with the following elements (minimum limits of the grid)
                                 double lambdag; (longitude)
                                 double phi; ( geodetic latitude)
-                                double HeightAboveEllipsoid; (height above the ellipsoid (HaE) )
-                                double HeightAboveGeoid;(height above the Geoid )
+                                double heightAboveEllipsoid; (height above the ellipsoid (HaE) )
+                                double heightAboveGeoid;(height above the Geoid )
                 maximum : same as the above (maximum limist of the grid)
                 step_size  : double  : spatial step size, in decimal degrees
                 a_step_size : double  :  double altitude step size (km)
                 step_time : double  : time step size (decimal years)
                 StartDate :  data structure with the following elements used
-                                        double DecimalYear;     ( decimal years )
+                                        double decimalYear;     ( decimal years )
                 EndDate :	Same as the above;
                 MagneticModel :	 data structure with the following elements
                         double EditionDate;
@@ -154,13 +154,13 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
                         int SecularVariationUsed; Whether or not the magnetic secular variation vector will be needed by program
                 Geoid :  data structure with the following elements
         Pointer to data structure Geoid with the following elements
-                        int NumbGeoidCols ;   ( 360 degrees of longitude at 15 minute spacing )
-                        int NumbGeoidRows ;   ( 180 degrees of latitude  at 15 minute spacing )
-                        int NumbHeaderItems ;    ( min, max lat, min, max long, lat, long spacing )
-                        int	ScaleFactor;    ( 4 grid cells per degree at 15 minute spacing  )
-                        float *GeoidHeightBuffer;   (Pointer to the memory to store the Geoid elevation data )
-                        int NumbGeoidElevs;    (number of points in the gridded file )
-                        int  Geoid_Initialized ;  ( indicates successful initialization )
+                        int numbGeoidCols ;   ( 360 degrees of longitude at 15 minute spacing )
+                        int numbGeoidRows ;   ( 180 degrees of latitude  at 15 minute spacing )
+                        int numbHeaderItems ;    ( min, max lat, min, max long, lat, long spacing )
+                        int	scaleFactor;    ( 4 grid cells per degree at 15 minute spacing  )
+                        float *geoidHeightBuffer;   (Pointer to the memory to store the Geoid elevation data )
+                        int numbGeoidElevs;    (number of points in the gridded file )
+                        int  isGeoidInitialized ;  ( indicates successful initialization )
    Ellip  data  structure with the following elements
                         double a; semi-major axis of the ellipsoid
                         double b; semi-minor axis of the ellipsoid
@@ -180,8 +180,8 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
                   GeodeticToSpherical Convert from geodeitic to Spherical Equations: 7-8, WMM Technical report
                   ComputeSphericalHarmonicVariables Compute Spherical Harmonic variables
                   AssociatedLegendreFunction Compute ALF  Equations 5-6, WMM Technical report
-                  Summation Accumulate the spherical harmonic coefficients Equations 10:12 , WMM Technical report
-                  RotateMagneticVector Map the computed Magnetic fields to Geodeitic coordinates Equation 16 , WMM Technical report
+                  summation Accumulate the spherical harmonic coefficients Equations 10:12 , WMM Technical report
+                  rotateMagneticVector Map the computed Magnetic fields to Geodeitic coordinates Equation 16 , WMM Technical report
                   CalculateGeoMagneticElements Calculate the geoMagnetic elements, Equation 18 , WMM Technical report
 
  */
@@ -225,14 +225,14 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
     TimedMagneticModel = AllocateModelMemory(NumTerms);
     LegendreFunction = AllocateLegendreFunctionMemory(NumTerms); /* For storing the ALF functions */
     SphVariables = AllocateSphVarMemory(MagneticModel->nMax);
-    a = minimum.HeightAboveGeoid; /*sets the loop initialization values*/
+    a = minimum.heightAboveGeoid; /*sets the loop initialization values*/
     b = minimum.phi;
     c = minimum.lambdag;
-    d = StartDate.DecimalYear;
-    double alt = minimum.HeightAboveGeoid;
+    d = StartDate.decimalYear;
+    double alt = minimum.heightAboveGeoid;
 
 
-    for(minimum.HeightAboveGeoid = a; minimum.HeightAboveGeoid <= maximum.HeightAboveGeoid; minimum.HeightAboveGeoid += altitude_step_size) /* Altitude loop*/
+    for(minimum.heightAboveGeoid = a; minimum.heightAboveGeoid <= maximum.heightAboveGeoid; minimum.heightAboveGeoid += altitude_step_size) /* Altitude loop*/
     {
 
         for(minimum.phi = b; minimum.phi <= maximum.phi; minimum.phi += cord_step_size) /*Latitude loop*/
@@ -240,13 +240,13 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
 
             for(minimum.lambdag = c; minimum.lambdag <= maximum.lambdag; minimum.lambdag += cord_step_size) /*Longitude loop*/
             {
-                alt = minimum.HeightAboveGeoid;
-                if(Geoid->UseGeoid == 1)
+                alt = minimum.heightAboveGeoid;
+                if(Geoid->isUseGeoid == 1)
                     ConvertGeoidToEllipsoidHeight(&minimum, Geoid); /* This converts the height above mean sea level to height above the WGS-84 ellipsoid */
                 else
-                    minimum.HeightAboveEllipsoid = minimum.HeightAboveGeoid;
+                    minimum.heightAboveEllipsoid = minimum.heightAboveGeoid;
 #ifndef WMMHR
-                if (minimum.HeightAboveEllipsoid < min_wgsalt || minimum.HeightAboveEllipsoid > max_wgsalt){
+                if (minimum.heightAboveEllipsoid < min_wgsalt || minimum.heightAboveEllipsoid > max_wgsalt){
                     printf("\n Unrecognized height: %.2f. \n %s \n", alt, WMM_MileSpec_WARN);
                     print_alt_warning = 1;
                 }
@@ -255,7 +255,7 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
                 ComputeSphericalHarmonicVariables(Ellip, CoordSpherical, MagneticModel->nMax, SphVariables); /* Compute Spherical Harmonic variables  */
                 AssociatedLegendreFunction(CoordSpherical, MagneticModel->nMax, LegendreFunction); /* Compute ALF  Equations 5-6, WMM Technical report*/
 
-                for(StartDate.DecimalYear = d; StartDate.DecimalYear <= EndDate.DecimalYear; StartDate.DecimalYear += time_step) /*Year loop*/
+                for(StartDate.decimalYear = d; StartDate.decimalYear <= EndDate.decimalYear; StartDate.decimalYear += time_step) /*year loop*/
                 {
 
                     TimelyModifyMagneticModel(StartDate, MagneticModel, TimedMagneticModel); /*This modifies the Magnetic coefficients to the correct date. */
@@ -347,39 +347,39 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
                             /*16. Yearly rate of change in grid variation*/;
                             break;
                         case 17:
-                            PrintElement = Gradient.GradPhi.X;
+                            PrintElement = Gradient.gradPhi.X;
                             UncertaintyOption = 0;
                             break;
                         case 18:
-                            PrintElement = Gradient.GradPhi.Y;
+                            PrintElement = Gradient.gradPhi.Y;
                             UncertaintyOption = 0;
                             break;
                         case 19:
-                            PrintElement = Gradient.GradPhi.Z;
+                            PrintElement = Gradient.gradPhi.Z;
                             UncertaintyOption = 0;
                             break;
                         case 20:
-                            PrintElement = Gradient.GradLambda.X;
+                            PrintElement = Gradient.gradLambda.X;
                             UncertaintyOption = 0;
                             break;
                         case 21:
-                            PrintElement = Gradient.GradLambda.Y;
+                            PrintElement = Gradient.gradLambda.Y;
                             UncertaintyOption = 0;
                             break;
                         case 22:
-                            PrintElement = Gradient.GradLambda.Z;
+                            PrintElement = Gradient.gradLambda.Z;
                             UncertaintyOption = 0;
                             break;
                         case 23:
-                            PrintElement = Gradient.GradZ.X;
+                            PrintElement = Gradient.gradZ.X;
                             UncertaintyOption = 0;
                             break;
                         case 24:
-                            PrintElement = Gradient.GradZ.Y;
+                            PrintElement = Gradient.gradZ.Y;
                             UncertaintyOption = 0;
                             break;
                         case 25:
-                            PrintElement = Gradient.GradZ.Z;
+                            PrintElement = Gradient.gradZ.Z;
                             UncertaintyOption = 0;
                             break;
                         default:
@@ -387,14 +387,14 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
                             ErrorElement = Errors.Decl;
                     }
                     
-                    if(Geoid->UseGeoid == 1)
+                    if(Geoid->isUseGeoid == 1)
                     {
-                        if(PrintOption == 1) fprintf(fileout, "%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag, minimum.HeightAboveGeoid, StartDate.DecimalYear, PrintElement);
-                        else printf("%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag, minimum.HeightAboveGeoid, StartDate.DecimalYear, PrintElement);
+                        if(PrintOption == 1) fprintf(fileout, "%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag, minimum.heightAboveGeoid, StartDate.decimalYear, PrintElement);
+                        else printf("%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag, minimum.heightAboveGeoid, StartDate.decimalYear, PrintElement);
                     } else
                     {
-                        if(PrintOption == 1) fprintf(fileout, "%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag, minimum.HeightAboveEllipsoid, StartDate.DecimalYear, PrintElement);
-                        else printf("%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag, minimum.HeightAboveEllipsoid, StartDate.DecimalYear, PrintElement);
+                        if(PrintOption == 1) fprintf(fileout, "%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag, minimum.heightAboveEllipsoid, StartDate.decimalYear, PrintElement);
+                        else printf("%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag, minimum.heightAboveEllipsoid, StartDate.decimalYear, PrintElement);
                     }
                     if(UncertaintyOption == 1) {
                         if(PrintOption == 1) fprintf(fileout, " %7.2f", ErrorElement);

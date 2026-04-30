@@ -1,5 +1,5 @@
 //
-// Created by Professional on 22.04.2026.
+// Created by Kiryuhin Viacheslav on 22.04.2026.
 //
 
 #pragma once
@@ -13,10 +13,10 @@ namespace wmm {
 
         void calcDecYear();
 
-        int Year{};
-        int Month{};
-        int Day{};
-        double DecimalYear{};  // decimal years
+        int year{};
+        int month{};
+        int day{};
+        double decimalYear{};  // decimal years
     };
 
 }  // namespace wmm

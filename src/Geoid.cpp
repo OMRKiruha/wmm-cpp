@@ -1,94 +1,81 @@
 //
-// Created by Professional on 22.04.2026.
+// Created by Kiryuhin Viacheslav on 22.04.2026.
 //
 
 #include "Geoid.h"
 
-#include "MagneticUtils.h"
 #include "EGM9615.h"
+#include "MagneticUtils.h"
 
 #include <cmath>
-#include <memory>
 
 namespace wmm {
 
     Geoid::Geoid() {
-        GeoidHeightBuffer = std::make_unique<Geoid::GeoidHeightArray_t>(GeoidHeightsArray);
-        Geoid_Initialized = 1;
+        geoidHeightBuffer = std::make_unique<Geoid::GeoidHeightArray_t>(GeoidHeightsArray);
+        isGeoidInitialized = true;
     }
 
-    /**
-     * The  function GetGeoidHeight returns the height of the
-     * EGM96 geiod above or below the WGS84 ellipsoid,
-     * at the specified geodetic coordinates,
-     * using a grid of height adjustments from the EGM96 gravity model.
-     *
-     *    Latitude            : Geodetic latitude in radians           (input)
-     *    Longitude           : Geodetic longitude in radians          (input)
-     *    DeltaHeight         : Height Adjustment, in meters.          (output)
-     *    Geoid				  : Geoid with Geoid grid		   (input)
+    /** @brief The function returns the height of the EGM96 geiod above or below
+     * the WGS84 ellipsoid, at the specified geodetic coordinates, using a grid of height
+     * adjustments from the EGM96 gravity model.
      */
-    int Geoid::GetGeoidHeight(double Latitude, double Longitude, double *DeltaHeight) const {
-        long Index;
-        double ElevationSE, ElevationSW, ElevationNE, ElevationNW;
-        double OffsetX, OffsetY;
-        double PostX, PostY;
-        double UpperY, LowerY;
-        int Error_Code = 0;
+    bool Geoid::getGeoidHeight(double latitude, double longitude, double &deltaHeight) const {
+        bool isError{false};
 
-        if(!Geoid_Initialized) {
-            PrintError(5);
-            return (false);
+        if(!isGeoidInitialized) {
+            printError(5);
+            return false;
         }
-        if((Latitude < -90) || (Latitude > 90)) {     /* Latitude out of range */
-            Error_Code |= 1;
+        if((latitude < -90) || (latitude > 90)) {      // latitude out of range
+            isError = true;
         }
-        if((Longitude < -180) || (Longitude > 360)) { /* Longitude out of range */
-            Error_Code |= 1;
+        if((longitude < -180) || (longitude > 360)) {  // longitude out of range
+            isError = true;
         }
 
-        if(!Error_Code) { /* no errors */
-            /*  Compute X and Y Offsets into Geoid Height Array:                          */
+        if(!isError) {
+            double offsetX{};
+            double offsetY{};
 
-            if(Longitude < 0.0) {
-                OffsetX = (Longitude + 360.0) * ScaleFactor;
+            //  Compute X and Y Offsets into Geoid Height Array:
+            if(longitude < 0.0) {
+                offsetX = (longitude + 360.0) * scaleFactor;
             } else {
-                OffsetX = Longitude * ScaleFactor;
+                offsetX = longitude * scaleFactor;
             }
-            OffsetY = (90.0 - Latitude) * ScaleFactor;
+            offsetY = (90.0 - latitude) * scaleFactor;
 
-            /*  Find Four Nearest Geoid Height Cells for specified Latitude, Longitude;   */
-            /*  Assumes that (0,0) of Geoid Height Array is at Northwest corner:          */
-
-            PostX = floor(OffsetX);
-            if((PostX + 1) == NumbGeoidCols) {
-                PostX--;
+            //  Find Four Nearest Geoid Height Cells for specified latitude, longitude;
+            //  Assumes that (0,0) of Geoid Height Array is at Northwest corner:
+            double postX = floor(offsetX);
+            if((postX + 1) == numbGeoidCols) {
+                postX--;
             }
-            PostY = floor(OffsetY);
-            if((PostY + 1) == NumbGeoidRows) {
-                PostY--;
+            double postY = floor(offsetY);
+            if((postY + 1) == numbGeoidRows) {
+                postY--;
             }
 
-            Index       = (long)(PostY * NumbGeoidCols + PostX);
-            ElevationNW = (double)GeoidHeightBuffer->at(Index);
-            ElevationNE = (double)GeoidHeightBuffer->at(Index + 1);
+            long index               = static_cast<long>((postY * numbGeoidCols) + postX);
+            const double elevationNW = geoidHeightBuffer->at(index);
+            const double elevationNE = geoidHeightBuffer->at(index + 1);
 
-            Index       = (long)((PostY + 1) * NumbGeoidCols + PostX);
-            ElevationSW = (double)GeoidHeightBuffer->at(Index);
-            ElevationSE = (double)GeoidHeightBuffer->at(Index + 1);
+            index                    = static_cast<long>(((postY + 1) * numbGeoidCols) + postX);
+            const double elevationSW = geoidHeightBuffer->at(index);
+            const double elevationSE = geoidHeightBuffer->at(index + 1);
 
-            /*  Perform Bi-Linear Interpolation to compute Height above Ellipsoid:        */
+            //  Perform Bi-Linear Interpolation to compute Height above Ellipsoid:
+            const double deltaX = offsetX - postX;
+            const double deltaY = offsetY - postY;
 
-            const double DeltaX = OffsetX - PostX;
-            const double DeltaY = OffsetY - PostY;
+            const double upperY = elevationNW + (deltaX * (elevationNE - elevationNW));
+            const double lowerY = elevationSW + (deltaX * (elevationSE - elevationSW));
 
-            UpperY = ElevationNW + DeltaX * (ElevationNE - ElevationNW);
-            LowerY = ElevationSW + DeltaX * (ElevationSE - ElevationSW);
-
-            *DeltaHeight = UpperY + DeltaY * (LowerY - UpperY);
+            deltaHeight = upperY + deltaY * (lowerY - upperY);
         } else {
-            PrintError(17);
-            return (false);
+            printError(17);
+            return false;
         }
         return true;
     }

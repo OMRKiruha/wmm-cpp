@@ -13,8 +13,8 @@ namespace wmm {
     struct GeoMagneticElements;
     struct Gradient;
 
-    int ValidateDMSstring(std::string_view input, int min, int max, std::string *Error);
-    void GetDeg(std::string_view Query_String, double *latitude, double bounds[2]);
+    bool ValidateDMSstring(std::string_view input, int min, int max, std::string &Error);
+    void GetDeg(std::string_view msg, double *latitude, double min, double max);
     int GetAltitude(std::string_view Query_String, Geoid *geoid, CoordGeodetic *coords, int bounds[2], int AltitudeSetting);
     int GetUserGrid(CoordGeodetic *minimum, CoordGeodetic *maximum, double *step_size, double *a_step_size,
                     double *step_time, Date *StartDate, Date *EndDate, int *ElementOption, int *PrintOption,

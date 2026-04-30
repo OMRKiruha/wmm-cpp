@@ -1,5 +1,5 @@
 //
-// Created by Professional on 21.04.2026.
+// Created by Kiryuhin Viacheslav on 21.04.2026.
 //
 
 #pragma once
@@ -11,11 +11,11 @@ namespace wmm {
 
     struct MagneticModel;
 
-    static double Rad2Deg(const double rad) {
+    static double rad2Deg(const double rad) {
         return rad * (180.0 / M_PI);
     }
 
-    static double Deg2Rad(const double deg) {
+    static double deg2Rad(const double deg) {
         return deg * (M_PI / 180.0);
     }
 
@@ -26,8 +26,8 @@ namespace wmm {
     double date_to_decYear(int year, int month, int day);
 
     // User Interface
-    void PrintError(int errorNumber);
+    void printError(int errorNumber);
 
-    int Warnings(int control, double value, const MagneticModel &magneticModel);
+    int warnings(int control, double value, const MagneticModel &magneticModel);
 
 }  // namespace wmm

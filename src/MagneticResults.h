@@ -1,5 +1,5 @@
 //
-// Created by Professional on 22.04.2026.
+// Created by Kiryuhin Viacheslav on 22.04.2026.
 //
 
 #pragma once
@@ -12,27 +12,27 @@ namespace wmm {
     struct CoordGeodetic;
 
     struct MagneticResults {
-        void Summation(const LegendreFunction &legendreFunction, const MagneticModel &magneticModel,
+        void summation(const LegendreFunction &legendreFunction, const MagneticModel &magneticModel,
                        const SphericalHarmonicVariables &sphVariables, const CoordSpherical &coordSpherical);
 
-        void SecVarSummation(const LegendreFunction &legendreFunction, MagneticModel &magneticModel,
+        void secVarSummation(const LegendreFunction &legendreFunction, MagneticModel &magneticModel,
                              const SphericalHarmonicVariables &sphVariables, const CoordSpherical &coordSpherical);
 
-        void RotateMagneticVector(const CoordSpherical &CoordSpherical, const CoordGeodetic &coordGeodetic,
+        void rotateMagneticVector(const CoordSpherical &coordSpherical, const CoordGeodetic &coordGeodetic,
                                   const MagneticResults &magneticResultsSph);
 
-        void GradYSummation(const LegendreFunction &LegendreFunction, const MagneticModel &magneticModel,
-                            const SphericalHarmonicVariables &SphVariables, const CoordSpherical &coordSpherical);
+        void GradYSummation(const LegendreFunction &legendreFunction, const MagneticModel &magneticModel,
+                            const SphericalHarmonicVariables &sphVariables, const CoordSpherical &coordSpherical);
 
         double Bx{};  // North
         double By{};  // East
         double Bz{};  // Down
 
     private:
-        void SummationSpecial(const MagneticModel &magneticModel, const SphericalHarmonicVariables &sphVariables,
+        void summationSpecial(const MagneticModel &magneticModel, const SphericalHarmonicVariables &sphVariables,
                               const CoordSpherical &coordSpherical);
 
-        void SecVarSummationSpecial(const MagneticModel &magneticModel, const SphericalHarmonicVariables &sphVariables,
+        void secVarSummationSpecial(const MagneticModel &magneticModel, const SphericalHarmonicVariables &sphVariables,
                                     const CoordSpherical &coordSpherical);
     };
 

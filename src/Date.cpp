@@ -1,5 +1,5 @@
 //
-// Created by Professional on 22.04.2026.
+// Created by Kiryuhin Viacheslav on 22.04.2026.
 //
 
 #include "Date.h"
@@ -12,25 +12,25 @@ namespace wmm{
     Date::Date() {
         const std::time_t t = std::time(nullptr);
         const std::tm *now  = std::localtime(&t);
-        Year                = now->tm_year + 1900;
-        Month               = now->tm_mon + 1;
-        Day                 = now->tm_mday;
+        year                = now->tm_year + 1900;
+        month               = now->tm_mon + 1;
+        day                 = now->tm_mday;
 
         calcDecYear();
     }
 
     Date::Date(std::string_view str) {
-        if(dateStr_to_ymd(str, Year, Month, Day)) {
+        if(dateStr_to_ymd(str, year, month, day)) {
             calcDecYear();
         } else {
-            Year        = 0;
-            Month       = 0;
-            Day         = 0;
-            DecimalYear = 0;
+            year        = 0;
+            month       = 0;
+            day         = 0;
+            decimalYear = 0;
         }
     }
 
     void Date::calcDecYear() {
-        DecimalYear = date_to_decYear(Year, Month, Day);
+        decimalYear = date_to_decYear(year, month, day);
     }
 }

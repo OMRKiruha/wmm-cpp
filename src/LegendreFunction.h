@@ -1,5 +1,5 @@
 //
-// Created by Professional on 22.04.2026.
+// Created by Kiryuhin Viacheslav on 22.04.2026.
 //
 
 #pragma once

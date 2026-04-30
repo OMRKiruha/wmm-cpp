@@ -1,5 +1,5 @@
 //
-// Created by Professional on 22.04.2026.
+// Created by Kiryuhin Viacheslav on 22.04.2026.
 //
 
 #include "GeoMagneticElements.h"
@@ -15,33 +15,32 @@
 #include "SphericalHarmonicVariables.h"
 #include "UTMParameters.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace wmm {
 
-    /** Calculate all the Geomagnetic elements from X,Y and Z components
-     * INPUT     MagneticResultsGeo
+    /** @brief Calculate all the Geomagnetic elements from X,Y and Z components
      */
     void GeoMagneticElements::calculate(const MagneticResults &magneticResultsGeo) {
         X = magneticResultsGeo.Bx;
         Y = magneticResultsGeo.By;
         Z = magneticResultsGeo.Bz;
 
-        H    = sqrt(magneticResultsGeo.Bx * magneticResultsGeo.Bx + magneticResultsGeo.By * magneticResultsGeo.By);
-        F    = sqrt(H * H + magneticResultsGeo.Bz * magneticResultsGeo.Bz);
-        Decl = Rad2Deg(atan2(Y, X));
-        Incl = Rad2Deg(atan2(Z, H));
+        H    = sqrt((magneticResultsGeo.Bx * magneticResultsGeo.Bx) + (magneticResultsGeo.By * magneticResultsGeo.By));
+        F    = sqrt((H * H) + (magneticResultsGeo.Bz * magneticResultsGeo.Bz));
+        Decl = rad2Deg(atan2(Y, X));
+        Incl = rad2Deg(atan2(Z, H));
     }
 
-    /**This takes the Magnetic Variation in x, y, and z and uses it to calculate the secular variation of each of the
-     * Geomagnetic elements.
-     * INPUT : MagneticVariation
+    /** @brief This takes the Magnetic Variation in x, y, and z and uses it to calculate
+     * the secular variation of each of the Geomagnetic elements.
      */
     void GeoMagneticElements::calculateSecularVariation(const MagneticResults &magneticVariation) {
         Xdot    = magneticVariation.Bx;
         Ydot    = magneticVariation.By;
         Zdot    = magneticVariation.Bz;
-        Hdot    = (X * Xdot + Y * Ydot) / H; /* See equation 19 in the WMM technical report */
+        Hdot    = (X * Xdot + Y * Ydot) / H;  // See equation 19 in the WMM technical report
         Fdot    = (X * Xdot + Y * Ydot + Z * Zdot) / F;
         Decldot = 180.0 / M_PI * (X * Ydot - Y * Xdot) / (H * H);
         Incldot = 180.0 / M_PI * (H * Zdot - Z * Hdot) / (F * F);
@@ -61,59 +60,51 @@ namespace wmm {
         GV   = Decl;
     }
 
-    /**
-     * The main subroutine that calls a sequence of WMM sub-functions to calculate the magnetic field elements for a single
-     * point. The function expects the model coefficients and point coordinates as input and returns the magnetic field
-     * elements and their rate of change. Though, this subroutine can be called successively to calculate a time series,
+    /** @brief The main subroutine that calls a sequence of WMM sub-functions to calculate
+     * the magnetic field elements for a single point. The function expects the model coefficients
+     * and point coordinates as input and returns the magnetic field elements and their rate of
+     * change. Though, this subroutine can be called successively to calculate a time series,
      * profile or grid of magnetic field, these are better achieved by the subroutine Grid.
-     *
-     * INPUT: ellip
-     *        CoordSpherical
-     *        CoordGeodetic
-     *        TimedMagneticModel
-     *
-     * OUTPUT : GeoMagneticElements
      */
     void GeoMagneticElements::geomag(const Ellipsoid &ellip, const CoordSpherical &coordSpherical,
                                      const CoordGeodetic &coordGeodetic, MagneticModel &timedMagneticModel) {
-        MagneticResults MagneticResultsSph{};
-        MagneticResults MagneticResultsGeo{};
-        MagneticResults MagneticResultsSphVar{};
-        MagneticResults MagneticResultsGeoVar{};
-
         // Create and compute ALF functions
-        LegendreFunction legendreFunction(coordSpherical, timedMagneticModel.nMax);
+        const LegendreFunction legendreFunction(coordSpherical, timedMagneticModel.nMax);
 
         // Create and compute Spherical Harmonic variables
-        SphericalHarmonicVariables sphVariables(ellip, coordSpherical, timedMagneticModel.nMax);
+        const SphericalHarmonicVariables sphVariables(ellip, coordSpherical, timedMagneticModel.nMax);
 
         // Accumulate the spherical harmonic coefficients
-        MagneticResultsSph.Summation(legendreFunction, timedMagneticModel, sphVariables, coordSpherical);
+        MagneticResults magneticResultsSph{};
+        magneticResultsSph.summation(legendreFunction, timedMagneticModel, sphVariables, coordSpherical);
 
         // Sum the Secular Variation Coefficients
-        MagneticResultsSphVar.SecVarSummation(legendreFunction, timedMagneticModel, sphVariables, coordSpherical);
+        MagneticResults magneticResultsSphVar{};
+        magneticResultsSphVar.secVarSummation(legendreFunction, timedMagneticModel, sphVariables, coordSpherical);
 
         // Map the computed Magnetic fields to Geodeitic coordinates
-        MagneticResultsGeo.RotateMagneticVector(coordSpherical, coordGeodetic, MagneticResultsSph);
+        MagneticResults magneticResultsGeo{};
+        magneticResultsGeo.rotateMagneticVector(coordSpherical, coordGeodetic, magneticResultsSph);
 
         // Map the secular variation field components to Geodetic coordinates
-        MagneticResultsGeoVar.RotateMagneticVector(coordSpherical, coordGeodetic, MagneticResultsSphVar);
+        MagneticResults magneticResultsGeoVar{};
+        magneticResultsGeoVar.rotateMagneticVector(coordSpherical, coordGeodetic, magneticResultsSphVar);
 
         // Calculate the Geomagnetic elements, Equation 19, WMM Technical report
-        this->calculate(MagneticResultsGeo);
+        this->calculate(magneticResultsGeo);
 
         // Calculate the secular variation of each of the Geomagnetic elements
-        this->calculateSecularVariation(MagneticResultsGeoVar);
+        this->calculateSecularVariation(magneticResultsGeoVar);
     }
 
     void GeoMagneticElements::gradY(const Ellipsoid &ellip, const CoordSpherical &coordSpherical,
                                     const CoordGeodetic &coordGeodetic, MagneticModel &timedMagneticModel,
                                     const GeoMagneticElements &geoMagneticElements) {
         // Create and compute ALF functions
-        LegendreFunction legendreFunction(coordSpherical, timedMagneticModel.nMax);
+        const LegendreFunction legendreFunction(coordSpherical, timedMagneticModel.nMax);
 
         // Create and compute Spherical Harmonic variables
-        SphericalHarmonicVariables sphVariables(ellip, coordSpherical, timedMagneticModel.nMax);
+        const SphericalHarmonicVariables sphVariables(ellip, coordSpherical, timedMagneticModel.nMax);
 
         // Accumulate the spherical harmonic coefficients
         MagneticResults GradYResultsSph;
@@ -121,22 +112,20 @@ namespace wmm {
 
         // Map the computed Magnetic fields to Geodetic coordinates
         MagneticResults GradYResultsGeo;
-        GradYResultsGeo.RotateMagneticVector(coordSpherical, coordGeodetic, GradYResultsSph);
+        GradYResultsGeo.rotateMagneticVector(coordSpherical, coordGeodetic, GradYResultsSph);
 
         // Calculate the Geomagnetic elements, Equation 18 , WMM Technical report
         this->calculateGradientElements(GradYResultsGeo, geoMagneticElements);
     }
 
-    /** Computes the grid variation for |latitudes| > MAX_LAT_DEGREE
-     * Grivation (or grid variation) is the angle between grid north and magnetic north. This routine calculates Grivation
-     * for the Polar Stereographic projection for polar locations (Latitude => |55| deg). Otherwise, it computes the grid
-     * variation in UTM projection system. However, the UTM projection codes may be used to compute the grid variation at any
-     * latitudes.
-     *
-     * INPUT :  CoordGeodetic location
-     * OUTPUT:  GeoMagneticElements elements
+    /** @brief Computes the grid variation for |latitudes| > MAX_LAT_DEGREE Grivation (or
+     * grid variation) is the angle between grid north and magnetic north. This routine
+     * calculates Grivation for the Polar Stereographic projection for polar locations
+     * (Latitude => |55| deg). Otherwise, it computes the grid variation in UTM projection
+     * system. However, the UTM projection codes may be used to compute the grid variation
+     * at any latitudes.
      **/
-    int GeoMagneticElements::CalculateGridVariation(const CoordGeodetic &location) {
+    int GeoMagneticElements::calculateGridVariation(const CoordGeodetic &location) {
         UTMParameters UTMParameters;
 
         if(location.phi >= PS_MAX_LAT_DEGREE) {
@@ -149,45 +138,40 @@ namespace wmm {
             return 1;
         }
 
-        UTMParameters.GetTransverseMercator(location);
-        GV = Decl - UTMParameters.ConvergenceOfMeridians;
+        UTMParameters.getTransverseMercator(location);
+        GV = Decl - UTMParameters.convergenceOfMeridians;
         return 0;
     }
 
-    void GeoMagneticElements::WMMErrorCalc(double H_) {
-        double decl_variable, decl_constant;
-        F             = WMM_UNCERTAINTY_F;
-        H             = WMM_UNCERTAINTY_H;
-        X             = WMM_UNCERTAINTY_X;
-        Z             = WMM_UNCERTAINTY_Z;
-        Incl          = WMM_UNCERTAINTY_I;
-        Y             = WMM_UNCERTAINTY_Y;
-        decl_variable = (WMM_UNCERTAINTY_D_COEF / H_);
-        decl_constant = (WMM_UNCERTAINTY_D_OFFSET);
-        Decl          = sqrt(decl_constant * decl_constant + decl_variable * decl_variable);
-        if(Decl > 180) {
-            Decl = 180;
-        }
+    void GeoMagneticElements::WMMerrorCalc(double H_) {
+        F                          = WMM_UNCERTAINTY_F;
+        H                          = WMM_UNCERTAINTY_H;
+        X                          = WMM_UNCERTAINTY_X;
+        Z                          = WMM_UNCERTAINTY_Z;
+        Incl                       = WMM_UNCERTAINTY_I;
+        Y                          = WMM_UNCERTAINTY_Y;
+        const double decl_variable = (WMM_UNCERTAINTY_D_COEF / H_);
+        const double decl_constant = (WMM_UNCERTAINTY_D_OFFSET);
+        Decl                       = sqrt((decl_constant * decl_constant) + (decl_variable * decl_variable));
+        Decl                       = std::min<double>(Decl, 180);
     }
 
-    void GeoMagneticElements::WMMHRErrorCalc(double H_) {
-        double decl_variable, decl_constant;
-        F             = WMMHR_UNCERTAINTY_F;
-        H             = WMMHR_UNCERTAINTY_H;
-        X             = WMMHR_UNCERTAINTY_X;
-        Z             = WMMHR_UNCERTAINTY_Z;
-        Incl          = WMMHR_UNCERTAINTY_I;
-        Y             = WMMHR_UNCERTAINTY_Y;
-        decl_variable = (WMMHR_UNCERTAINTY_D_COEF / H_);
-        decl_constant = (WMMHR_UNCERTAINTY_D_OFFSET);
-        Decl          = sqrt(decl_constant * decl_constant + decl_variable * decl_variable);
-        if(Decl > 180) {
-            Decl = 180;
-        }
+    [[maybe_unused]] void GeoMagneticElements::WMMHRerrorCalc(double H_) {
+        F                          = WMMHR_UNCERTAINTY_F;
+        H                          = WMMHR_UNCERTAINTY_H;
+        X                          = WMMHR_UNCERTAINTY_X;
+        Z                          = WMMHR_UNCERTAINTY_Z;
+        Incl                       = WMMHR_UNCERTAINTY_I;
+        Y                          = WMMHR_UNCERTAINTY_Y;
+        const double decl_variable = (WMMHR_UNCERTAINTY_D_COEF / H_);
+        const double decl_constant = (WMMHR_UNCERTAINTY_D_OFFSET);
+        Decl                       = sqrt((decl_constant * decl_constant) + (decl_variable * decl_variable));
+        Decl                       = std::min<double>(Decl, 180);
     }
 
-    // This function scales all the geomagnetic elements to scale a vector use MagneticResultsScale
-    GeoMagneticElements GeoMagneticElements::scaled(const double factor) const {
+    /** @brief This function scales all the geomagnetic elements to scale a vector use MagneticResultsScale
+     */
+    [[maybe_unused]] GeoMagneticElements GeoMagneticElements::scaled(const double factor) const {
         GeoMagneticElements product;
         product.X       = X * factor;
         product.Y       = Y * factor;
@@ -208,7 +192,8 @@ namespace wmm {
         return product;
     }
 
-    // This function scales all the geomagnetic elements to scale a vector use MagneticResultsScale
+    /** @brief This function scales all the geomagnetic elements to scale a vector use MagneticResultsScale
+     */
     void GeoMagneticElements::scale(const double factor) {
         X *= factor;
         Y *= factor;
@@ -228,9 +213,10 @@ namespace wmm {
         GVdot *= factor;
     }
 
-    /** This algorithm does not result in the difference of F being derived from
+    /** @brief This algorithm does not result in the difference of F being derived from
      * the Pythagorean theorem.  This function should be used for computing residuals
-     * or changes in elements.*/
+     * or changes in elements.
+     */
     GeoMagneticElements GeoMagneticElements::operator-(const GeoMagneticElements &subtrahend) const {
         GeoMagneticElements difference;
         difference.X = X - subtrahend.X;
@@ -257,20 +243,27 @@ namespace wmm {
         return difference;
     }
 
-    // Errors.Decl, Errors.Incl, Errors.F are all assumed to exist
-    void GeoMagneticElements::ErrorCalc(GeoMagneticElements B) {
-        const double cos2D = cos(Deg2Rad(B.Decl)) * cos(Deg2Rad(B.Decl));
-        const double cos2I = cos(Deg2Rad(B.Incl)) * cos(Deg2Rad(B.Incl));
-        const double sin2D = sin(Deg2Rad(B.Decl)) * sin(Deg2Rad(B.Decl));
-        const double sin2I = sin(Deg2Rad(B.Incl)) * sin(Deg2Rad(B.Incl));
-        const double eD    = Deg2Rad(Decl);
-        const double eI    = Deg2Rad(Incl);
+    /** @brief Errors.Decl, Errors.Incl, Errors.F are all assumed to exist
+     */
+    [[maybe_unused]] void GeoMagneticElements::errorCalc(GeoMagneticElements B) {
+        const double cos2D = cos(deg2Rad(B.Decl)) * cos(deg2Rad(B.Decl));
+        const double cos2I = cos(deg2Rad(B.Incl)) * cos(deg2Rad(B.Incl));
+        const double sin2D = sin(deg2Rad(B.Decl)) * sin(deg2Rad(B.Decl));
+        const double sin2I = sin(deg2Rad(B.Incl)) * sin(deg2Rad(B.Incl));
+        const double eD    = deg2Rad(Decl);
+        const double eI    = deg2Rad(Incl);
         const double EDSq  = eD * eD;
         const double EISq  = eI * eI;
-        X = sqrt(cos2D * cos2I * F * F + B.F * B.F * sin2D * cos2I * EDSq + B.F * B.F * cos2D * sin2I * EISq);
-        Y = sqrt(sin2D * cos2I * F * F + B.F * B.F * cos2D * cos2I * EDSq + B.F * B.F * sin2D * sin2I * EISq);
-        Z = sqrt(sin2I * F * F + B.F * B.F * cos2I * EISq);
-        H = sqrt(cos2I * F * F + B.F * B.F * sin2I * EISq);
+        X = sqrt((cos2D * cos2I * F * F) + (B.F * B.F * sin2D * cos2I * EDSq) + (B.F * B.F * cos2D * sin2I * EISq));
+        Y = sqrt((sin2D * cos2I * F * F) + (B.F * B.F * cos2D * cos2I * EDSq) + (B.F * B.F * sin2D * sin2I * EISq));
+        Z = sqrt((sin2I * F * F) + (B.F * B.F * cos2I * EISq));
+        H = sqrt((cos2I * F * F) + (B.F * B.F * sin2I * EISq));
     }
 
+    void GeoMagneticElements::geomag(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic,
+                                     MagneticModel &timedMagneticModel) {
+        CoordSpherical coordSpherical;
+        coordSpherical.fromGeodetic(ellip, coordGeodetic);
+        geomag(ellip, coordSpherical, coordGeodetic, timedMagneticModel);
+    }
 }  // namespace wmm

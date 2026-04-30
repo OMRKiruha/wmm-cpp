@@ -1,26 +1,25 @@
 //
-// Created by Professional on 22.04.2026.
+// Created by Kiryuhin Viacheslav on 22.04.2026.
 //
 
 #pragma once
 
-#include "Geoid.h"
-
 namespace wmm {
+    struct Geoid;
     struct Ellipsoid;
     struct CoordSpherical;
 
     struct CoordGeodetic {
-        void CheckGeographicPole();
-        void fromSpherical(const Ellipsoid &ellip, const CoordSpherical &coordSpherical);
+        [[maybe_unused]] void fromSpherical(const Ellipsoid &ellip, const CoordSpherical &coordSpherical);
         void fromCartesian(const Ellipsoid &ellip, double x, double y, double z);
-        static void equivalentLatLon(double lat, double lon, double *repairedLat, double *repairedLon);
-        int convertGeoidToEllipsoidHeight(const Geoid &geoid);
+        [[maybe_unused]] void checkGeographicPole();
+        static void equivalentLatLon(double lat, double lon, double &repairedLat, double &repairedLon);
+        bool convertGeoidToEllipsoidHeight(const Geoid &geoid);
 
         double lambda{};                // geodetic longitude
         double phi{};                   // geodetic latitude
-        double HeightAboveEllipsoid{};  // height above the ellipsoid (HaE)
-        double HeightAboveGeoid{};      // (height above the EGM96 geoid model)
-        int UseGeoid{1};
+        double heightAboveEllipsoid{};  // height above the ellipsoid (HaE)
+        double heightAboveGeoid{};      // height above the EGM96 geoid model
+        bool isUseGeoid{true};          // by default use geoid in calculations
     };
 }  // namespace wmm

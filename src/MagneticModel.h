@@ -1,12 +1,12 @@
 //
-// Created by Professional on 22.04.2026.
+// Created by Kiryuhin Viacheslav on 22.04.2026.
 //
 
 #pragma once
 
+#include <cmath>
 #include <string>
 #include <vector>
-#include <cmath>
 
 namespace wmm {
     struct Date;
@@ -22,6 +22,7 @@ namespace wmm {
         double editionDate{};
         double epoch{NAN};  // Base time of Geomagnetic model epoch (yrs)
         double min_year{};
+        double coefficientFileEndDate{};
         std::string modelName;
         std::vector<double>
             main_Field_Coeff_G;  // C - Gauss coefficients of main geomagnetic model (nT) Index is (n * (n + 1) / 2 + m)
@@ -30,10 +31,16 @@ namespace wmm {
         std::vector<double> secular_Var_Coeff_H;  // CD - Gauss coefficients of secular geomagnetic model (nT/yr)
         int nMax{};                               // Maximum degree of spherical harmonic model
         int nMaxSecVar{};                         // Maximum degree of spherical harmonic secular model
-        int secularVariationUsed{};  // Whether or not the magnetic secular variation vector will be needed by program
-        double coefficientFileEndDate{};
+        bool secularVariationUsed{};  // Whether or not the magnetic secular variation vector will be needed by program
 
     private:
         bool readMagneticModelCoefficients(std::ifstream &file);
+
+        //    int robustReadMagneticModel_Large(std::string_view filename, char *filenameSV, std::vector<MagneticModel>&
+        //    magneticModels);
+
+        //    int readMagneticModel_Large(char *filename, char *filenameSV, MagneticModel *MagneticModel);
+
+        //    int readMagneticModel_SHDF(char *filename, MagneticModel *(*magneticmodels)[], int array_size);
     };
 }  // namespace wmm

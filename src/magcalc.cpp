@@ -6,6 +6,7 @@
 
 #include "GeoMagneticElements.h"
 #include "MagneticModel.h"
+#include "CoordSpherical.h"
 
 namespace wmm {
 
@@ -21,11 +22,31 @@ namespace wmm {
         // Computes the geoMagnetic field elements and their time change
         geoMagneticElements->geomag(ellip, coordSpherical, coordGeodetic, timedMagneticModel);
 
-        geoMagneticElements->CalculateGridVariation(coordGeodetic);
+        geoMagneticElements->calculateGridVariation(coordGeodetic);
 #ifdef WMMHR
         errors->WMMHRErrorCalc(geoMagneticElements->H);
 #else
-        errors->WMMErrorCalc(geoMagneticElements->H);
+        errors->WMMerrorCalc(geoMagneticElements->H);
+#endif
+    }
+
+    /* The function is for point calculation for ewmm_point. The input of hight is already determined whether to
+     * covert to Ellipsoid height
+     */
+    void point_calc(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic, const Date &userDate,
+                    const MagneticModel &magneticModel, GeoMagneticElements *geoMagneticElements,
+                    GeoMagneticElements *errors) {
+        // Time adjust the coefficients, Equation 19, WMM Technical report
+        MagneticModel timedMagneticModel{magneticModel.applyDate(userDate)};
+
+        // Computes the geoMagnetic field elements and their time change
+        geoMagneticElements->geomag(ellip, coordGeodetic, timedMagneticModel);
+
+        geoMagneticElements->calculateGridVariation(coordGeodetic);
+#ifdef WMMHR
+        errors->WMMHRErrorCalc(geoMagneticElements->H);
+#else
+        errors->WMMerrorCalc(geoMagneticElements->H);
 #endif
     }
 

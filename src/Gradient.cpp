@@ -1,5 +1,5 @@
 //
-// Created by Professional on 22.04.2026.
+// Created by Kiryuhin Viacheslav on 22.04.2026.
 //
 
 #include "Gradient.h"
@@ -11,7 +11,7 @@
 
 namespace wmm {
 
-    /** It should be noted that the x[2], y[2], and z[2] variables are NOT the same
+    /** @brief It should be noted that the x[2], y[2], and z[2] variables are NOT the same
      * coordinate system as the directions in which the gradients are taken.  These
      * variables represent a Cartesian coordinate system where the Earth's center is
      * the origin, 'z' points up toward the North (rotational) pole and 'x' points toward
@@ -21,36 +21,46 @@ namespace wmm {
      * North, tangent to the local longitude line, and 'y' points East, tangent to
      * the local latitude line.
      **/
-    void Gradient::Calculate(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic, MagneticModel &timedMagneticModel) {
-        double phiDelta = 0.01, /* DeltaY = 0.01, */ hDelta = -1, x[2], y[2], z[2], distance;
+    void Gradient::calculate(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic, MagneticModel &timedMagneticModel) {
+        const double phiDelta = 0.01;
+        const double hDelta   = -1;
+        double x1{};
+        double y1{};
+        double z1{};
 
-        CoordSpherical AdjCoordSpherical;
-        CoordGeodetic AdjCoordGeodetic;
-        GeoMagneticElements GeomagneticElements, AdjGeoMagneticElements[2];
+        double x2{};
+        double y2{};
+        double z2{};
 
-        /* Initialization */
-        AdjCoordSpherical.fromGeodetic(ellip, coordGeodetic);
-        GeomagneticElements.geomag(ellip, AdjCoordSpherical, coordGeodetic, timedMagneticModel);
-        AdjCoordGeodetic = coordGeodetic;
+        // Initialization
+        CoordSpherical adjCoordSpherical;
+        adjCoordSpherical.fromGeodetic(ellip, coordGeodetic);
 
+        GeoMagneticElements geomagneticElements;
+        geomagneticElements.geomag(ellip, adjCoordSpherical, coordGeodetic, timedMagneticModel);
+        CoordGeodetic adjCoordGeodetic{coordGeodetic};
 
-        /* Gradient along x */
-        AdjCoordGeodetic.phi = coordGeodetic.phi + phiDelta;
-        AdjCoordSpherical.fromGeodetic(ellip, AdjCoordGeodetic);
-        AdjGeoMagneticElements[0].geomag(ellip, AdjCoordSpherical, AdjCoordGeodetic, timedMagneticModel);
-        AdjCoordSpherical.toCartesian(x[0], y[0], z[0]);
-        AdjCoordGeodetic.phi = coordGeodetic.phi - phiDelta;
-        AdjCoordSpherical.fromGeodetic(ellip, AdjCoordGeodetic);
-        AdjGeoMagneticElements[1].geomag(ellip, AdjCoordSpherical, AdjCoordGeodetic, timedMagneticModel);
-        AdjCoordSpherical.toCartesian(x[1], y[1], z[1]);
+        // Gradient along x
+        adjCoordGeodetic.phi = coordGeodetic.phi + phiDelta;
+        adjCoordSpherical.fromGeodetic(ellip, adjCoordGeodetic);
 
+        GeoMagneticElements adjGeoMagneticElements1;
+        adjGeoMagneticElements1.geomag(ellip, adjCoordSpherical, adjCoordGeodetic, timedMagneticModel);
+        adjCoordSpherical.toCartesian(x1, y1, z1);
 
-        distance = sqrt((x[0] - x[1]) * (x[0] - x[1]) + (y[0] - y[1]) * (y[0] - y[1]) + (z[0] - z[1]) * (z[0] - z[1]));
-        GradPhi  = AdjGeoMagneticElements[0] - AdjGeoMagneticElements[1];
-        GradPhi.scale(1 / distance);
-        AdjCoordGeodetic = coordGeodetic;
+        adjCoordGeodetic.phi = coordGeodetic.phi - phiDelta;
+        adjCoordSpherical.fromGeodetic(ellip, adjCoordGeodetic);
 
-        /*Gradient along y*/
+        GeoMagneticElements adjGeoMagneticElements2;
+        adjGeoMagneticElements2.geomag(ellip, adjCoordSpherical, adjCoordGeodetic, timedMagneticModel);
+        adjCoordSpherical.toCartesian(x2, y2, z2);
+
+        double distance = sqrt(((x1 - x2) * (x1 - x2)) + ((y1 - y2) * (y1 - y2)) + ((z1 - z2) * (z1 - z2)));
+        gradPhi         = adjGeoMagneticElements1 - adjGeoMagneticElements2;
+        gradPhi.scale(1 / distance);
+        adjCoordGeodetic = coordGeodetic;
+
+        // Gradient along y
 
         /*It is perhaps noticeable that the method here for calculation is substantially
          different than that for the gradient along x.  As we near the North pole
@@ -58,24 +68,26 @@ namespace wmm {
          for latitude lines becomes unstable when 0.01 degrees represents sufficiently
          small numbers, and fails to function correctly at all at the North Pole */
 
-        AdjCoordSpherical.fromGeodetic(ellip, coordGeodetic);
-        GradLambda.gradY(ellip, AdjCoordSpherical, coordGeodetic, timedMagneticModel, GeomagneticElements);
+        adjCoordSpherical.fromGeodetic(ellip, coordGeodetic);
+        gradLambda.gradY(ellip, adjCoordSpherical, coordGeodetic, timedMagneticModel, geomagneticElements);
 
-        /*Gradient along z*/
-        AdjCoordGeodetic.HeightAboveEllipsoid = coordGeodetic.HeightAboveEllipsoid + hDelta;
-        AdjCoordGeodetic.HeightAboveGeoid     = coordGeodetic.HeightAboveGeoid + hDelta;
-        AdjCoordSpherical.fromGeodetic(ellip, AdjCoordGeodetic);
-        AdjGeoMagneticElements[0].geomag(ellip, AdjCoordSpherical, AdjCoordGeodetic, timedMagneticModel);
-        AdjCoordSpherical.toCartesian(x[0], y[0], z[0]);
-        AdjCoordGeodetic.HeightAboveEllipsoid = coordGeodetic.HeightAboveEllipsoid - hDelta;
-        AdjCoordGeodetic.HeightAboveGeoid     = coordGeodetic.HeightAboveGeoid - hDelta;
-        AdjCoordSpherical.fromGeodetic(ellip, AdjCoordGeodetic);
-        AdjGeoMagneticElements[1].geomag(ellip, AdjCoordSpherical, AdjCoordGeodetic, timedMagneticModel);
-        AdjCoordSpherical.toCartesian(x[1], y[1], z[1]);
+        // Gradient along z
+        adjCoordGeodetic.heightAboveEllipsoid = coordGeodetic.heightAboveEllipsoid + hDelta;
+        adjCoordGeodetic.heightAboveGeoid     = coordGeodetic.heightAboveGeoid + hDelta;
+        adjCoordSpherical.fromGeodetic(ellip, adjCoordGeodetic);
 
-        distance = sqrt((x[0] - x[1]) * (x[0] - x[1]) + (y[0] - y[1]) * (y[0] - y[1]) + (z[0] - z[1]) * (z[0] - z[1]));
-        GradZ    = AdjGeoMagneticElements[0] - AdjGeoMagneticElements[1];
-        GradZ.scale(1 / distance);
-        AdjCoordGeodetic = coordGeodetic;
+        adjGeoMagneticElements1.geomag(ellip, adjCoordSpherical, adjCoordGeodetic, timedMagneticModel);
+        adjCoordSpherical.toCartesian(x1, y1, z1);
+
+        adjCoordGeodetic.heightAboveEllipsoid = coordGeodetic.heightAboveEllipsoid - hDelta;
+        adjCoordGeodetic.heightAboveGeoid     = coordGeodetic.heightAboveGeoid - hDelta;
+        adjCoordSpherical.fromGeodetic(ellip, adjCoordGeodetic);
+
+        adjGeoMagneticElements2.geomag(ellip, adjCoordSpherical, adjCoordGeodetic, timedMagneticModel);
+        adjCoordSpherical.toCartesian(x2, y2, z2);
+
+        distance = sqrt(((x1 - x2) * (x1 - x2)) + ((y1 - y2) * (y1 - y2)) + ((z1 - z2) * (z1 - z2)));
+        gradZ    = adjGeoMagneticElements1 - adjGeoMagneticElements2;
+        gradZ.scale(1 / distance);
     }
 }  // namespace wmm

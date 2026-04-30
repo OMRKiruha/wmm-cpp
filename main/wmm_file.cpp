@@ -235,8 +235,8 @@ int main(int argc, char *argv[]) {
     /* Check for Geographic Poles */
 
     /* Set EGM96 Geoid parameters */
-    Geoid.GeoidHeightBuffer = GeoidHeightBuffer;
-    Geoid.Geoid_Initialized = 1;
+    Geoid.geoidHeightBuffer = GeoidHeightBuffer;
+    Geoid.isGeoidInitialized = 1;
     /* Set EGM96 Geoid parameters END */
     maxyr = MagneticModels[0]->CoefficientFileEndDate;
     minyr = MagneticModels[0]->min_year;
@@ -561,9 +561,9 @@ int main(int argc, char *argv[]) {
 
         /* If needed modify height referencing */
         if(igdgc == 2) {
-            Geoid.UseGeoid = 0; /* height above WGS-84 Ellipsoid */
+            Geoid.isUseGeoid = 0; /* height above WGS-84 Ellipsoid */
         } else if(igdgc == 1) {
-            Geoid.UseGeoid = 1; /* height above MSL */
+            Geoid.isUseGeoid = 1; /* height above MSL */
         }
 
 
@@ -593,8 +593,8 @@ int main(int argc, char *argv[]) {
 
         CoordGeodetic.lambda           = longitude;
         CoordGeodetic.phi              = latitude;
-        CoordGeodetic.HeightAboveGeoid = alt;
-        UserDate.DecimalYear           = sdate;
+        CoordGeodetic.heightAboveGeoid = alt;
+        UserDate.decimalYear           = sdate;
 
 
         /* Get altitude min and max for selected model. */
@@ -607,7 +607,7 @@ int main(int argc, char *argv[]) {
         /* Get altitude */
 
         if(coords_from_file && !arg_err &&
-           (CoordGeodetic.HeightAboveGeoid < minalt || CoordGeodetic.HeightAboveGeoid > maxalt)) {
+           (CoordGeodetic.heightAboveGeoid < minalt || CoordGeodetic.heightAboveGeoid > maxalt)) {
             // printf("\n Unrecognized altitude %s in coordinate file line %1d. %s\n", args[3], iline, WMM_MileSpec_WARN);
             print_alt_warning = 1;
         }
@@ -615,7 +615,7 @@ int main(int argc, char *argv[]) {
         GeodeticToSpherical(
             Ellip, CoordGeodetic,
             &CoordSpherical); /*Convert from geodeitic to Spherical Equations: 17-18, WMM Technical report*/
-        epoch = ((int)UserDate.DecimalYear - 1900) / 5;
+        epoch = ((int)UserDate.decimalYear - 1900) / 5;
         if(epoch >= epochs) {
             epoch = epochs - 1;
         }

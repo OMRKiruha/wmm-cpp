@@ -55,15 +55,6 @@ namespace wmm {
 
     enum YYYYMMDD { YEAR, MONTH, DAY };
 
-    // Memory and File Processing
-
-    //    int robustReadMagneticModel_Large(std::string_view filename, char *filenameSV, std::vector<MagneticModel>&
-    //    magneticModels);
-
-    //    int readMagneticModel_Large(char *filename, char *filenameSV, MagneticModel *MagneticModel);
-
-    //    int readMagneticModel_SHDF(char *filename, MagneticModel *(*magneticmodels)[], int array_size);
-
     // Conversions, Transformations, and other Calculations
     void BaseErrors(double declCoef, double declBaseline, double inclOffset, double fOffset, double multiplier, double H,
                     double *declErr, double *inclErr, double *fErr);

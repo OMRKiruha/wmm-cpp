@@ -17,4 +17,8 @@ namespace wmm {
                     const Date &userDate, const MagneticModel &magneticModel, GeoMagneticElements *geoMagneticElements,
                     GeoMagneticElements *errors);
 
+    void point_calc(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic, const Date &userDate,
+                    const MagneticModel &magneticModel, GeoMagneticElements *geoMagneticElements,
+                    GeoMagneticElements *errors);
+
 }  // namespace wmm

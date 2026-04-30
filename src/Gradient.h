@@ -1,22 +1,22 @@
 //
-// Created by Professional on 22.04.2026.
+// Created by Kiryuhin Viacheslav on 22.04.2026.
 //
 
 #pragma once
 
 #include "GeoMagneticElements.h"
 
-namespace wmm{
+namespace wmm {
     struct Ellipsoid;
     struct CoordGeodetic;
     struct MagneticModel;
 
     struct Gradient {
-        void Calculate(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic, MagneticModel &timedMagneticModel);
+        void calculate(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic, MagneticModel &timedMagneticModel);
 
-        int UseGradient{};
-        GeoMagneticElements GradPhi;     // phi
-        GeoMagneticElements GradLambda;  // lambdag
-        GeoMagneticElements GradZ;
+        int useGradient{};
+        GeoMagneticElements gradPhi;     // phi
+        GeoMagneticElements gradLambda;  // lambdag
+        GeoMagneticElements gradZ;
     };
-}
+}  // namespace wmm

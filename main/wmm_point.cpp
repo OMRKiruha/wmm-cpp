@@ -1,7 +1,6 @@
 /*--------------------------------------------------------------------------*/
 
 #include <cmath>
-#include <cstdio>
 #include <iostream>
 #include <string>
 
@@ -34,10 +33,11 @@
 
 char GeomagIntroduction_WMM(const wmm::MagneticModel &magneticModel, const std::string &modelDate);
 
-void help_info(const wmm::MagneticModel &magneticModel, std::string_view short_name);
+void help_info(const wmm::MagneticModel &magneticModel, const std::string &shortName);
+
+constexpr auto max_size = std::numeric_limits<std::streamsize>::max();
 
 int main() {
-    char ans[20], b;
 
 #ifdef WMMHR
     const std::string filename{"WMMHR.COF"};
@@ -49,27 +49,25 @@ int main() {
 
     wmm::MagneticModel magneticModel;
     if(!magneticModel.readModel(filename)) {
-        printf("\n %s not found.  Press enter to exit... \n ", filename.c_str());
-        fgets(ans, 20, stdin);
+        std::cerr << std::format("\n {} not found.  Press enter to exit... \n", filename);
+        std::cin.get();
         return 1;
     }
 
     if(std::isnan(magneticModel.epoch)) {
-        wmm::PrintError(2);
+        wmm::printError(2);
     }
 
     // Set EGM96 geoid parameters
     wmm::Date userDate{};
-    wmm::Geoid geoid{};
-    wmm::Ellipsoid ellip{};
+    const wmm::Geoid geoid{};
+    const wmm::Ellipsoid ellip{};
     wmm::CoordGeodetic coordGeodetic;
     wmm::CoordSpherical coordSpherical;
     wmm::GeoMagneticElements geoMagneticElements;
     wmm::GeoMagneticElements errors;
 
-    b = GeomagIntroduction_WMM(magneticModel, MODEL_RELEASE_DATE);
-
-    while(b != 'x') {
+    if(GeomagIntroduction_WMM(magneticModel, MODEL_RELEASE_DATE) != 'x') {
         //        if(GetUserInput(magneticModel, &geoid, &coordGeodetic, &userDate) == 1) /*Get User Input */
         {
             coordGeodetic.lambda = 48.8;
@@ -85,7 +83,7 @@ int main() {
                 std::cout << std::endl << BOZ_WARN_TEXT_WEAK << std::endl;
             }
 #ifndef WMMHR
-            if(coordGeodetic.HeightAboveEllipsoid < -1 || coordGeodetic.HeightAboveEllipsoid > 1900) {
+            if(coordGeodetic.heightAboveEllipsoid < -1 || coordGeodetic.heightAboveEllipsoid > 1900) {
                 std::cout << std::endl << WMM_MileSpec_WARN << std::endl;
             } else {
                 std::cout << std::endl << WMM_MileSpec_INFO << std::endl;
@@ -95,45 +93,38 @@ int main() {
             PrintUserDataWithUncertainty(geoMagneticElements, errors, coordGeodetic, userDate, magneticModel, geoid);
         }
 
-        do {
-            printf("\n\n Do you need more point data ? (y or n) \n ");
-        } while(nullptr == fgets(ans, 20, stdin));
-        switch(ans[0]) {
+        std::cout << "\n\n Do you need more point data ? (y or n) \n ";
+        std::cin.clear();
+        std::cin.ignore(max_size, '\n');
+        switch(std::cin.get()) {
             case 'Y':
             case 'y':
                 break;
             case 'N':
             case 'n':
-                return 0;
+                return EXIT_SUCCESS;
             default:
-                return 0;
+                return EXIT_FAILURE;
         }
     }
-
-    return 0;
+    return EXIT_SUCCESS;
 }
 
-/* Prints the introduction to the Geomagnetic program.  It needs the Magnetic model for the epoch.
- *
- * INPUT  magneticModel		: MagneticModel With Model epoch 	(input)
- * OUTPUT ans   (char)  user selection
+/** @brief Prints the introduction to the Geomagnetic program.  It needs the Magnetic model for the epoch.
  */
 char GeomagIntroduction_WMM(const wmm::MagneticModel &magneticModel, const std::string &modelDate) {
     std::string versionDate{VERSIONDATE_LARGE};
     versionDate = versionDate.substr(39, 11);
 
-    int ans_size = 10;
-    char help[ans_size];
-
     std::string msg{};
 #ifdef WMMHR
-    std::string short_name{"WMMHR"};
+    const std::string short_name{"WMMHR"};
     msg.append("\n\n Welcome to the World Magnetic Model High-Resolution (WMMHR) ");
 #else
-    std::string short_name{"WMM"};
+    const std::string short_name{"WMM"};
     msg.append("\n\n Welcome to the World Magnetic Model ");
-    msg.append(std::to_string(static_cast<int>(magneticModel.epoch)) + " C-Program\n\n");
 #endif
+    msg.append(std::to_string(static_cast<int>(magneticModel.epoch)) + " C++ Program\n\n");
     msg.append("              --- Model Release Date: " + modelDate + " ---\n");
     msg.append("            --- Software Release Date: " + versionDate + " ---\n\n");
     msg.append("\n This program estimates the strength and direction of ");
@@ -142,83 +133,91 @@ char GeomagIntroduction_WMM(const wmm::MagneticModel &magneticModel, const std::
     msg.append("\n >");
     std::cout << msg;
 
-    while(fgets(help, ans_size, stdin) == NULL || (help[0] != 'C' && help[0] != 'c')) {
-        if(help[0] == 'h' || help[0] == 'H') {
+    char c{};
+    while(true) {
+        c = std::cin.get();
+        if(c == 'C' || c == 'c') {
+            break;
+        }
+        if(c == 'H' || c == 'h') {
             help_info(magneticModel, short_name);
         }
-        std::cout << "\n Enter h for help and contact information or c to continue."
-                  << "\n >";
+        std::cin.clear();
+        std::cin.ignore(max_size, '\n');
+        std::cout << "\n Enter h for help and contact information or c to continue. \n >";
     }
 
+    return c;
+}
 
-    return help[0];
-} /*GeomagIntroduction_WMM*/
-
-void help_info(const wmm::MagneticModel &magneticModel, const std::string_view short_name) {
-    printf("\n Help information ");
+void help_info(const wmm::MagneticModel &magneticModel, const std::string &shortName) {
+    std::string msg{};
+    msg.append("\n Help information ");
 
 #ifdef WMMHR
-    printf("\n The World Magnetic Model High-Resolution (WMMHR) for %d", (int)magneticModel->epoch);
+    msg.append("\n The World Magnetic Model High-Resolution (WMMHR) for ");
 #else
-    printf("\n The World Magnetic Model (WMM) for %d", (int)magneticModel.epoch);
+    msg.append("\n The World Magnetic Model (WMM) for ");
 #endif
-    printf("\n is a model of Earth's main magnetic field. The %s", short_name.data());
-    printf("\n is recomputed every five (5) years, in years divisible by ");
-    printf("\n five (i.e. 2020, 2025). See the contact information below");
-    printf("\n to obtain more information on the %s and associated software.", short_name.data());
-    printf("\n ");
-    printf("\n Input required is the location in geodetic latitude and");
-    printf("\n longitude (positive for northern latitudes and eastern ");
-    printf("\n longitudes), geodetic altitude in meters, and the date of ");
-    printf("\n interest in years.");
+    msg.append(std::to_string(static_cast<int>(magneticModel.epoch)));
+    msg.append("\n is a model of Earth's main magnetic field. The " + shortName);
+    msg.append("\n is recomputed every five (5) years, in years divisible by ");
+    msg.append("\n five (i.e. 2020, 2025). See the contact information below");
+    msg.append("\n to obtain more information on the " + shortName + " and associated software." + shortName);
 
-    printf("\n\n\n The program computes the estimated Magnetic Declination");
-    printf("\n (Decl) which is sometimes called MagneticVAR, Inclination (Incl), Total");
-    printf("\n Intensity (F or TI), Horizontal Intensity (H or HI), Vertical");
-    printf("\n Intensity (Z), and Grid Variation (GV). Declination and Grid");
-    printf("\n Variation are measured in units of degrees and are considered");
-    printf("\n positive when east or north. Inclination is measured in units");
-    printf("\n of degrees and is considered positive when pointing down (into");
-    printf("\n the Earth). The %s is referenced to the WGS-84 ellipsoid and", short_name.data());
-    printf("\n is valid for 5 years after the base epoch. Uncertainties for the");
-    printf("\n %s are one standard deviation uncertainties averaged over the globe.", short_name.data());
-    printf("\n We represent the uncertainty as constant values in Incl, F, H, X,");
-    printf("\n Y, and Z. Uncertainty in Declination varies depending on the strength");
-    printf("\n of the horizontal field. For more information see the %s Technical", short_name.data());
-    printf("\n Report.");
+    msg.append("\n\n Input required is the location in geodetic latitude and");
+    msg.append("\n longitude (positive for northern latitudes and eastern ");
+    msg.append("\n longitudes), geodetic altitude in meters, and the date of ");
+    msg.append("\n interest in years.");
 
-    printf("\n\n\n It is very important to note that a degree and order 133 model,");
-    printf("\n such as %s, describes only the longest wavelength spatial magnetic ", short_name.data());
-    printf("\n fluctuations due to Earth's core, mantle and crust. Not included in the %s series", short_name.data());
-    printf("\n models are intermediate and short wavelength spatial fluctuations ");
-    printf("\n that originate in Earth's mantle and crust. Consequently, isolated");
-    printf("\n angular errors at various positions on the surface (primarily over");
-    printf("\n land, along continental margins and over oceanic sea-mounts, ridges and");
-    printf("\n trenches) of several degrees may be expected. Also not included in");
-    printf("\n the model are temporal fluctuations of magnetospheric and ionospheric");
-    printf("\n origin. On the days during and immediately following magnetic storms,");
-    printf("\n temporal fluctuations can cause substantial deviations of the Geomagnetic");
-    printf("\n field from model values. If the required declination accuracy is");
-    printf("\n more stringent than the %s series of models provide, the user is", short_name.data());
-    printf("\n advised to request special (regional or local) surveys be performed");
+    msg.append("\n\n The program computes the estimated Magnetic Declination");
+    msg.append("\n (Decl) which is sometimes called MagneticVAR, Inclination (Incl), Total");
+    msg.append("\n Intensity (F or TI), Horizontal Intensity (H or HI), Vertical");
+    msg.append("\n Intensity (Z), and Grid Variation (GV). Declination and Grid");
+    msg.append("\n Variation are measured in units of degrees and are considered");
+    msg.append("\n positive when east or north. Inclination is measured in units");
+    msg.append("\n of degrees and is considered positive when pointing down (into");
+    msg.append("\n the Earth). The " + shortName + " is referenced to the WGS-84 ellipsoid and");
+    msg.append("\n is valid for 5 years after the base epoch. Uncertainties for the");
+    msg.append("\n " + shortName + " are one standard deviation uncertainties averaged over the globe.");
+    msg.append("\n We represent the uncertainty as constant values in Incl, F, H, X,");
+    msg.append("\n Y, and Z. Uncertainty in Declination varies depending on the strength");
+    msg.append("\n of the horizontal field. For more information see the " + shortName + " Technical");
+    msg.append("\n Report.");
+
+    msg.append("\n\n It is very important to note that a degree and order 133 model,");
+    msg.append("\n such as " + shortName + ", describes only the longest wavelength spatial magnetic ");
+    msg.append("\n fluctuations due to Earth's core, mantle and crust. Not included in the " + shortName + " series");
+    msg.append("\n models are intermediate and short wavelength spatial fluctuations ");
+    msg.append("\n that originate in Earth's mantle and crust. Consequently, isolated");
+    msg.append("\n angular errors at various positions on the surface (primarily over");
+    msg.append("\n land, along continental margins and over oceanic sea-mounts, ridges and");
+    msg.append("\n trenches) of several degrees may be expected. Also not included in");
+    msg.append("\n the model are temporal fluctuations of magnetospheric and ionospheric");
+    msg.append("\n origin. On the days during and immediately following magnetic storms,");
+    msg.append("\n temporal fluctuations can cause substantial deviations of the Geomagnetic");
+    msg.append("\n field from model values. If the required declination accuracy is");
+    msg.append("\n more stringent than the " + shortName + " series of models provide, the user is");
+    msg.append("\n advised to request special (regional or local) surveys be performed");
 #ifdef WMMHR
-    printf("\n and models prepared. The World Magnetic Model High-Resolution is a joint product of");
+    msg.append("\n and models prepared. The World Magnetic Model High-Resolution is a joint product of");
 #else
-    printf("\n and models prepared. The World Magnetic Model is a joint product of");
+    msg.append("\n and models prepared. The World Magnetic Model is a joint product of");
 #endif
-    printf("\n the United States' National Geospatial-Intelligence Agency (NGA) and");
-    printf("\n the United Kingdom's Defence Geographic Centre (DGC). The %s was", short_name.data());
-    printf("\n developed jointly by the National Centers for Environmental Information");
-    printf("\n (NCEI, Boulder CO, USA) and the British Geological Survey (BGS, ");
-    printf("\n Edinburgh, Scotland).");
+    msg.append("\n the United States' National Geospatial-Intelligence Agency (NGA) and");
+    msg.append("\n the United Kingdom's Defence Geographic Centre (DGC). The " + shortName + " was");
+    msg.append("\n developed jointly by the National Centers for Environmental Information");
+    msg.append("\n (NCEI, Boulder CO, USA) and the British Geological Survey (BGS, ");
+    msg.append("\n Edinburgh, Scotland).");
 
-    printf("\n\n\n Contact Information");
+    msg.append("\n\n Contact Information");
+    msg.append("\n  Software and Model Support");
+    msg.append("\n	National Centers for Environmental Information");
+    msg.append("\n	NOAA E/NE42");
+    msg.append("\n	325 Broadway");
+    msg.append("\n	Boulder, CO 80305 USA");
+    msg.append("\n	Attn: Manoj Nair or Arnaud Chulliat");
+    msg.append("\n	Email:  geomag.Models@noaa.gov \n");
 
-    printf("\n  Software and Model Support");
-    printf("\n	National Centers for Environmental Information");
-    printf("\n	NOAA E/NE42");
-    printf("\n	325 Broadway");
-    printf("\n	Boulder, CO 80305 USA");
-    printf("\n	Attn: Manoj Nair or Arnaud Chulliat");
-    printf("\n	Email:  geomag.Models@noaa.gov \n");
+    std::cout << msg;
 }

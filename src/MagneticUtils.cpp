@@ -1,5 +1,5 @@
 //
-// Created by Professional on 21.04.2026.
+// Created by Kiryuhin Viacheslav on 21.04.2026.
 //
 
 #include "MagneticUtils.h"
@@ -22,7 +22,7 @@ namespace wmm {
         }
 
         if(month > 12 || month < 1) {
-            std::cerr << "Month out of range\n";
+            std::cerr << "month out of range\n";
             return false;
         }
 
@@ -33,7 +33,7 @@ namespace wmm {
         }
 
         if(day > days.at(month) || day < 1) {
-            std::cerr << "Day out of range\n";
+            std::cerr << "day out of range\n";
             return false;
         }
         return true;
@@ -41,7 +41,9 @@ namespace wmm {
 
     // Parse the date string format as mm/dd/yyyy
     double dateStr_to_decYear(const std::string_view edit_date) {
-        int day{}, month{}, year{};
+        int day{};
+        int month{};
+        int year{};
 
         if(!dateStr_to_ymd(edit_date, year, month, day)) {
             return 0;
@@ -66,42 +68,33 @@ namespace wmm {
         }
         total_days += day;
 
-        const auto out = year + (total_days - 1) / total_year_days;
+        const auto out = year + ((total_days - 1) / total_year_days);
         return out;
     }
 
-    /** Converts a given Decimal year into a Year, Month and Date it also outputs an error string if there is a problem
-     * INPUT  CalendarDate  Pointer to the  data  structure with the following elements
-     *            double DecimalYear;      decimal years
-     * OUTPUT  CalendarDate  Pointer to the  data  structure with the following elements updated
-     * int Year
-     * int Month
-     * int Day
-     *       Error    pointer to an error string
-     * CALLS : none
-     **/
-    int decYear_to_date(const std::string_view edit_date, Date *CalendarDate) {  // TODO
+    /** Converts a given Decimal year into a year, month and Date it also outputs an error string if there is a problem
+     */
+    int decYear_to_date(const std::string_view edit_date, Date *date) {  // TODO
         int MonthDays[13], CumulativeDays = 0;
         int ExtraDay = 0;
         int i, DayOfTheYear;
 
 
-        if(CalendarDate->DecimalYear < 1900) {
-            CalendarDate->Year  = 0;
-            CalendarDate->Month = 0;
-            CalendarDate->Day   = 0;
+        if(date->decimalYear < 1900) {
+            date->year  = 0;
+            date->month = 0;
+            date->day   = 0;
             return false;
         }
 
-        CalendarDate->Year = floor(CalendarDate->DecimalYear);
+        date->year = floor(date->decimalYear);
 
 
-        if((CalendarDate->Year % 4 == 0 && CalendarDate->Year % 100 != 0) || CalendarDate->Year % 400 == 0) {
+        if((date->year % 4 == 0 && date->year % 100 != 0) || date->year % 400 == 0) {
             ExtraDay = 1;
         }
 
-        DayOfTheYear =
-            floor((CalendarDate->DecimalYear - (double)CalendarDate->Year) * (365.0 + (double)ExtraDay) + 0.5) + 1;
+        DayOfTheYear = floor(((date->decimalYear - date->year) * (365.0 + (double)ExtraDay)) + 0.5) + 1;
         /*The above floor is used for rounding, this only works for positive integers*/
 
 
@@ -124,22 +117,18 @@ namespace wmm {
             CumulativeDays = CumulativeDays + MonthDays[i];
 
             if(DayOfTheYear <= CumulativeDays) {
-                CalendarDate->Month = i;
-                CalendarDate->Day   = MonthDays[i] - (CumulativeDays - DayOfTheYear);
+                date->month = i;
+                date->day   = MonthDays[i] - (CumulativeDays - DayOfTheYear);
                 break;
             }
         }
 
-
         return true;
+    }
 
-    } /*YearToDate*/
-
-    /** This prints WMM errors.
-     * INPUT : errorNumer Error look up number
-     * OUTPUT: none
-     **/
-    void PrintError(const int errorNumber) {
+    /** @brief This prints WMM errors.
+     */
+    void printError(const int errorNumber) {
         switch(errorNumber) {
             case 1:
                 std::cerr << "\nError allocating in LegendreFunctionMemory.\n";
@@ -184,13 +173,13 @@ namespace wmm {
                 std::cerr << "\nError allocating in SummationSpecial\n";
                 break;
             case 15:
-                std::cerr << "\nError allocating in SecVarSummationSpecial\n";
+                std::cerr << "\nError allocating in secVarSummationSpecial\n";
                 break;
             case 16:
                 std::cerr << "\nError in opening EGM9615.BIN file\n";
                 break;
             case 17:
-                std::cerr << "\nError: Latitude OR Longitude out of range in GetGeoidHeight\n";
+                std::cerr << "\nError: Latitude OR Longitude out of range in getGeoidHeight\n";
                 break;
             case 18:
                 std::cerr << "\nError allocating in PcupHigh\n";
@@ -214,48 +203,35 @@ namespace wmm {
         }
     }
 
-    /** Return value 0 means end program, Return value 1 means get new data, Return value 2 means continue.
+    /** @brief Return value 0 means end program, Return value 1 means get new data, Return value 2 means continue.
      * This prints a warning to the screen determined by the control integer. It also takes the value of the parameter
      * causing the warning as a double.  This is unnecessary for some warnings. It requires the MagneticModel to determine
      * the current epoch.
-     *
-     * INPUT control :int : (Warning number)
-     *       value   : double: Magnetic field strength
-     *       MagneticModel
-     *       OUTPUT : none
-     *       CALLS : none
      */
-    int Warnings(int control, double value, const MagneticModel &magneticModel) {
-        std::string ans{"     "};
-
+    int warnings(int control, double value, const MagneticModel &magneticModel) {
         switch(control) {
-            case 1: /* Horizontal Field strength low */
-                do {
-                    std::cerr << "\nCaution: location is approaching the blackout zone around the magnetic pole as\n"
-                              << "         defined by the WMM military specification \n"
-                              << "         (https://www.ngdc.noaa.gov/geomag/WMM/data/MIL-PRF-89500B.pdf). Compass\n"
-                              << "         accuracy may be degraded in this region.\n"
-                              << "Press enter to continue...\n";
-                } while(nullptr == fgets(ans.data(), ans.size(), stdin));
+            case 1:  // Horizontal Field strength low
+                std::cerr << "\nCaution: location is approaching the blackout zone around the magnetic pole as\n"
+                          << "         defined by the WMM military specification \n"
+                          << "         (https://www.ngdc.noaa.gov/geomag/WMM/data/MIL-PRF-89500B.pdf). Compass\n"
+                          << "         accuracy may be degraded in this region.\n"
+                          << "Press enter to continue...\n";
+                std::cin.get();
                 break;
-            case 2: /* Horizontal Field strength very low */
-                do {
-                    std::cerr << "\nWarning: location is in the blackout zone around the magnetic pole as defined\n"
-                              << "         by the WMM military specification \n"
-                              << "         (https://www.ngdc.noaa.gov/geomag/WMM/data/MIL-PRF-89500B.pdf). Compass\n"
-                              << "         accuracy is highly degraded in this region.\n";
-                } while(nullptr == fgets(ans.data(), ans.size(), stdin));
+            case 2:  // Horizontal Field strength very low
+                std::cerr << "\nWarning: location is in the blackout zone around the magnetic pole as defined\n"
+                          << "         by the WMM military specification \n"
+                          << "         (https://www.ngdc.noaa.gov/geomag/WMM/data/MIL-PRF-89500B.pdf). Compass\n"
+                          << "         accuracy is highly degraded in this region.\n";
+                std::cin.get();
                 break;
-            case 3: /* Elevation outside the recommended range */
-                printf("\nWarning: The value you have entered of %.1f km for the elevation is outside of the recommended "
-                       "range.\n Elevations above -10.0 km are recommended for accurate results. \n",
-                       value);
+            case 3:  // Elevation outside the recommended range
+                std::cerr << "\nWarning: The value you have entered of %.1f km for the elevation is outside of the "
+                             "recommended range.\n Elevations above -10.0 km are recommended for accurate results. \n"
+                          << value;
                 while(true) {
                     std::cerr << "\nPlease press 'C' to continue, 'G' to get new data or 'X' to exit...\n";
-                    while(nullptr == fgets(ans.data(), ans.size(), stdin)) {
-                        std::cerr << "\nInvalid input\n";
-                    }
-                    switch(ans[0]) {
+                    switch(const auto c = std::cin.get()) {
                         case 'X':
                         case 'x':
                             return 0;
@@ -266,13 +242,11 @@ namespace wmm {
                         case 'c':
                             return 2;
                         default:
-                            printf("\nInvalid input %c\n", ans[0]);
+                            std::cerr << std::format("\nInvalid input {}\n", static_cast<char>(c));
                             break;
                     }
                 }
-                break;
-
-            case 4: /*Date outside the recommended range*/
+            case 4:  // Date outside the recommended range
                 std::cerr << "\nWARNING - TIME EXTENDS BEYOND INTENDED USAGE RANGE\n CONTACT NCEI FOR PRODUCT UPDATES:\n"
                           << "	National Centers for Environmental Information\n"
                           << "	NOAA E/NE42\n"
@@ -281,16 +255,13 @@ namespace wmm {
                           << "	Attn: Manoj Nair or Arnaud Chulliat\n"
                           << "	Phone:	(303) 497-4642 or -6522\n"
                           << "	Email:	geomag.models@noaa.gov\n"
-                          << "	Web: https://www.ngdc.noaa.gov/geomag/WMM/DoDWMM.shtml\n";
-                printf("\n VALID RANGE  = %d - %d\n", (int)magneticModel.min_year,
-                       (int)magneticModel.coefficientFileEndDate);
-                printf(" TIME   = %f\n", value);
+                          << "	Web: https://www.ngdc.noaa.gov/geomag/WMM/DoDWMM.shtml\n"
+                          << "\n VALID RANGE  = " << static_cast<int>(magneticModel.min_year) << " - "
+                          << static_cast<int>(magneticModel.coefficientFileEndDate) << "\n"
+                          << " TIME   = " << value << "\n";
                 while(true) {
                     std::cerr << "\nPlease press 'C' to continue, 'N' to enter new data or 'X' to exit...\n";
-                    while(nullptr == fgets(ans.data(), ans.size(), stdin)) {
-                        std::cerr << "\nInvalid input\n";
-                    }
-                    switch(ans[0]) {
+                    switch(const auto c = std::cin.get()) {
                         case 'X':
                         case 'x':
                             return 0;
@@ -301,21 +272,17 @@ namespace wmm {
                         case 'c':
                             return 2;
                         default:
-                            printf("\nInvalid input %c\n", ans[0]);
+                            std::cerr << std::format("\nInvalid input {}\n", c);
                             break;
                     }
                 }
-                break;
-            case 5: /*Elevation outside the allowable range*/
-                printf("\nError: The value you have entered of %f km for the elevation is outside of the recommended "
-                       "range.\n Elevations above -10.0 km are recommended for accurate results. \n",
-                       value);
+            case 5:  // Elevation outside the allowable range
+                std::cerr << "\nError: The value you have entered of " << value
+                          << " km for the elevation is outside of the recommended range.\n"
+                          << " Elevations above -10.0 km are recommended for accurate results. \n";
                 while(true) {
                     std::cerr << "\nPlease press 'C' to continue, 'G' to get new data or 'X' to exit...\n";
-                    while(nullptr == fgets(ans.data(), sizeof(ans), stdin)) {
-                        std::cerr << "\nInvalid input\n";
-                    }
-                    switch(ans[0]) {
+                    switch(const auto c = std::cin.get()) {
                         case 'X':
                         case 'x':
                             return 0;
@@ -326,12 +293,13 @@ namespace wmm {
                         case 'c':
                             return 2;
                         default:
-                            printf("\nInvalid input %c\n", ans[0]);
+                            std::cerr << std::format("\nInvalid input {}\n", c);
                             break;
                     }
                 }
-                break;
+            default:
+                return 2;
         }
         return 2;
-    } /*Warnings*/
+    }
 }  // namespace wmm

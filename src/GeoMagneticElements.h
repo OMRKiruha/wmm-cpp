@@ -1,5 +1,5 @@
 //
-// Created by Professional on 22.04.2026.
+// Created by Kiryuhin Viacheslav on 22.04.2026.
 //
 
 #pragma once
@@ -15,22 +15,24 @@ namespace wmm {
         void geomag(const Ellipsoid &ellip, const CoordSpherical &coordSpherical, const CoordGeodetic &coordGeodetic,
                     MagneticModel &timedMagneticModel);
 
+        void geomag(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic, MagneticModel &timedMagneticModel);
+
         void gradY(const Ellipsoid &ellip, const CoordSpherical &coordSpherical, const CoordGeodetic &coordGeodetic,
                    MagneticModel &timedMagneticModel, const GeoMagneticElements &geoMagneticElements);
 
-        int CalculateGridVariation(const CoordGeodetic &location);
+        int calculateGridVariation(const CoordGeodetic &location);
 
-        void WMMErrorCalc(double H_);
+        void WMMerrorCalc(double H_);
 
-        void WMMHRErrorCalc(double H_);
+        [[maybe_unused]] void WMMHRerrorCalc(double H_);
 
-        [[nodiscard]] GeoMagneticElements scaled(double factor) const;
+        [[maybe_unused]] [[nodiscard]] GeoMagneticElements scaled(double factor) const;
 
         void scale(double factor);
 
         GeoMagneticElements operator-(const GeoMagneticElements &subtrahend) const;
 
-        void ErrorCalc(GeoMagneticElements B);
+        [[maybe_unused]] void errorCalc(GeoMagneticElements B);
 
         double Decl{};     // 1. Angle between the magnetic field vector and true north, positive east
         double Incl{};     // 2. Angle between the magnetic field vector and the horizontal plane, positive down
