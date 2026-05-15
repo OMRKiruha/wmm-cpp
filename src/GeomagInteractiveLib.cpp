@@ -25,7 +25,7 @@ namespace wmm {
     /* Validates a latitude DMS string, and returns 1 for a success and returns 0 for a failure.
      * It copies an error message to the Error string in the event of a failure.
      */
-    bool ValidateDMSstring(const std::string_view input, int min, int max, std::string &Error) {
+    bool ValidateDMSstring(const std::string_view input, const int min, const int max, std::string &Error) {
         int j          = 0;
         int max_minute = 60;
         int max_second = 60;
@@ -34,7 +34,7 @@ namespace wmm {
         int second     = -1;
 
         // tests for legal characters
-        const auto isIllegalChar = [](char ch) {
+        const auto isIllegalChar = [](const char ch) {
             return (ch < '0' || ch > '9') && (ch != ',' && ch != ' ' && ch != '-' && ch != '\0' && ch != '\n');
         };
 
@@ -85,7 +85,7 @@ namespace wmm {
     }
 
     /** @brief Gets a degree value from the user using the standard input */
-    void GetDeg(std::string_view msg, double *latitude, double min, double max) {
+    void GetDeg(const std::string_view msg, double *latitude, const double min, const double max) {
         std::string buffer;
         buffer.reserve(65);
         std::string errorMessage;
@@ -152,7 +152,8 @@ namespace wmm {
         }
     }
 
-    int GetAltitude(std::string_view Query_String, Geoid *geoid, CoordGeodetic *coords, int bounds[2], int AltitudeSetting) {
+    int GetAltitude(const std::string_view Query_String, Geoid *geoid, CoordGeodetic *coords, int bounds[2],
+                    const int AltitudeSetting) {
         int done, j, UpBoundOn;
         char tmp;
         std::string buffer;
@@ -296,7 +297,7 @@ namespace wmm {
         }
     }
 
-    void GetMaxGridInputAlt(double *coord, double min) {
+    void GetMaxGridInputAlt(double *coord, const double min) {
         std::string buffer;
 
         if(NULL == fgets(buffer.data(), 64, stdin) || sscanf(buffer.data(), "%lf", coord) != 1) {
@@ -840,7 +841,7 @@ with the following elements updates double decimalYear;     ( decimal years ) En
         fclose(OUT);
     } /*PrintEMMFormat*/
 
-    void PrintSHDFFormat(char *filename, MagneticModel *(*magneticModel)[], int epochs) {
+    void PrintSHDFFormat(char *filename, MagneticModel *(*magneticModel)[], const int epochs) {
         int i, n, m, index, epochRange;
         FILE *SHDF_file;
         SHDF_file = fopen(filename, "w");

@@ -40,23 +40,23 @@ namespace wmm {
         Xdot    = magneticVariation.Bx;
         Ydot    = magneticVariation.By;
         Zdot    = magneticVariation.Bz;
-        Hdot    = (X * Xdot + Y * Ydot) / H;  // See equation 19 in the WMM technical report
-        Fdot    = (X * Xdot + Y * Ydot + Z * Zdot) / F;
-        Decldot = 180.0 / std::numbers::pi * (X * Ydot - Y * Xdot) / (H * H);
-        Incldot = 180.0 / std::numbers::pi * (H * Zdot - Z * Hdot) / (F * F);
+        Hdot    = ((X * Xdot) + (Y * Ydot)) / H;  // See equation 19 in the WMM technical report
+        Fdot    = ((X * Xdot) + (Y * Ydot) + (Z * Zdot)) / F;
+        Decldot = rad2Deg(((X * Ydot) - (Y * Xdot)) / (H * H));
+        Incldot = rad2Deg(((H * Zdot) - (Z * Hdot)) / (F * F));
         GVdot   = Decldot;
     }
 
     void GeoMagneticElements::calculateGradientElements(const MagneticResults &gradResults,
-                                                        const GeoMagneticElements &magneticElements) {
+                                                        const GeoMagneticElements &magElem) {
         X = gradResults.Bx;
         Y = gradResults.By;
         Z = gradResults.Bz;
 
-        H    = (X * magneticElements.X + Y * magneticElements.Y) / magneticElements.H;
-        F    = (X * magneticElements.X + Y * magneticElements.Y + Z * magneticElements.Z) / magneticElements.F;
-        Decl = 180.0 / std::numbers::pi * (magneticElements.X * Y - magneticElements.Y * X) / (magneticElements.H * magneticElements.H);
-        Incl = 180.0 / std::numbers::pi * (magneticElements.H * Z - magneticElements.Z * H) / (magneticElements.F * magneticElements.F);
+        H    = ((X * magElem.X) + (Y * magElem.Y)) / magElem.H;
+        F    = ((X * magElem.X) + (Y * magElem.Y) + (Z * magElem.Z)) / magElem.F;
+        Decl = rad2Deg(((magElem.X * Y) - (magElem.Y * X)) / (magElem.H * magElem.H));
+        Incl = rad2Deg(((magElem.H * Z) - (magElem.Z * H)) / (magElem.F * magElem.F));
         GV   = Decl;
     }
 
@@ -98,7 +98,7 @@ namespace wmm {
     }
 
     void GeoMagneticElements::gradY(const Ellipsoid &ellip, const CoordSpherical &coordSpherical,
-                                    const CoordGeodetic &coordGeodetic, MagneticModel &timedMagneticModel,
+                                    const CoordGeodetic &coordGeodetic, const MagneticModel &timedMagneticModel,
                                     const GeoMagneticElements &geoMagneticElements) {
         // Create and compute ALF functions
         const LegendreFunction legendreFunction(coordSpherical, timedMagneticModel.nMax);
@@ -125,48 +125,47 @@ namespace wmm {
      * system. However, the UTM projection codes may be used to compute the grid variation
      * at any latitudes.
      **/
-    int GeoMagneticElements::calculateGridVariation(const CoordGeodetic &location) {
+    void GeoMagneticElements::calculateGridVariation(const CoordGeodetic &location) {
         UTMParameters UTMParameters;
 
         if(location.phi >= PS_MAX_LAT_DEGREE) {
             GV = Decl - location.lambda;
-            return 1;
+            return;
         }
 
         if(location.phi <= PS_MIN_LAT_DEGREE) {
             GV = Decl + location.lambda;
-            return 1;
+            return;
         }
 
         UTMParameters.getTransverseMercator(location);
         GV = Decl - UTMParameters.convergenceOfMeridians;
-        return 0;
     }
 
-    void GeoMagneticElements::WMMerrorCalc(double H_) {
-        F                          = WMM_UNCERTAINTY_F;
-        H                          = WMM_UNCERTAINTY_H;
-        X                          = WMM_UNCERTAINTY_X;
-        Z                          = WMM_UNCERTAINTY_Z;
-        Incl                       = WMM_UNCERTAINTY_I;
-        Y                          = WMM_UNCERTAINTY_Y;
-        const double decl_variable = (WMM_UNCERTAINTY_D_COEF / H_);
-        const double decl_constant = (WMM_UNCERTAINTY_D_OFFSET);
-        Decl                       = sqrt((decl_constant * decl_constant) + (decl_variable * decl_variable));
-        Decl                       = std::min<double>(Decl, 180);
+    void GeoMagneticElements::WMMerrorCalc(const double H_) {
+        F                              = WMM_UNCERTAINTY_F;
+        H                              = WMM_UNCERTAINTY_H;
+        X                              = WMM_UNCERTAINTY_X;
+        Z                              = WMM_UNCERTAINTY_Z;
+        Incl                           = WMM_UNCERTAINTY_I;
+        Y                              = WMM_UNCERTAINTY_Y;
+        const double decl_variable     = (WMM_UNCERTAINTY_D_COEF / H_);
+        constexpr double decl_constant = WMM_UNCERTAINTY_D_OFFSET;
+        Decl                           = sqrt((decl_constant * decl_constant) + (decl_variable * decl_variable));
+        Decl                           = std::min<double>(Decl, 180);
     }
 
-    [[maybe_unused]] void GeoMagneticElements::WMMHRerrorCalc(double H_) {
-        F                          = WMMHR_UNCERTAINTY_F;
-        H                          = WMMHR_UNCERTAINTY_H;
-        X                          = WMMHR_UNCERTAINTY_X;
-        Z                          = WMMHR_UNCERTAINTY_Z;
-        Incl                       = WMMHR_UNCERTAINTY_I;
-        Y                          = WMMHR_UNCERTAINTY_Y;
-        const double decl_variable = (WMMHR_UNCERTAINTY_D_COEF / H_);
-        const double decl_constant = (WMMHR_UNCERTAINTY_D_OFFSET);
-        Decl                       = sqrt((decl_constant * decl_constant) + (decl_variable * decl_variable));
-        Decl                       = std::min<double>(Decl, 180);
+    [[maybe_unused]] void GeoMagneticElements::WMMHRerrorCalc(const double H_) {
+        F                              = WMMHR_UNCERTAINTY_F;
+        H                              = WMMHR_UNCERTAINTY_H;
+        X                              = WMMHR_UNCERTAINTY_X;
+        Z                              = WMMHR_UNCERTAINTY_Z;
+        Incl                           = WMMHR_UNCERTAINTY_I;
+        Y                              = WMMHR_UNCERTAINTY_Y;
+        const double decl_variable     = (WMMHR_UNCERTAINTY_D_COEF / H_);
+        constexpr double decl_constant = WMMHR_UNCERTAINTY_D_OFFSET;
+        Decl                           = sqrt((decl_constant * decl_constant) + (decl_variable * decl_variable));
+        Decl                           = std::min<double>(Decl, 180);
     }
 
     /** @brief This function scales all the geomagnetic elements to scale a vector use MagneticResultsScale
@@ -245,7 +244,7 @@ namespace wmm {
 
     /** @brief Errors.Decl, Errors.Incl, Errors.F are all assumed to exist
      */
-    [[maybe_unused]] void GeoMagneticElements::errorCalc(GeoMagneticElements B) {
+    [[maybe_unused]] void GeoMagneticElements::errorCalc(const GeoMagneticElements &B) {
         const double cos2D = cos(deg2Rad(B.Decl)) * cos(deg2Rad(B.Decl));
         const double cos2I = cos(deg2Rad(B.Incl)) * cos(deg2Rad(B.Incl));
         const double sin2D = sin(deg2Rad(B.Decl)) * sin(deg2Rad(B.Decl));

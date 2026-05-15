@@ -18,7 +18,6 @@ namespace wmm {
 
     struct Geoid {
         Geoid();
-        ~Geoid() = default;
 
         bool getGeoidHeight(double latitude, double longitude, double &deltaHeight) const;
 

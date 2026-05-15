@@ -19,7 +19,7 @@ namespace wmm{
         calcDecYear();
     }
 
-    Date::Date(std::string_view str) {
+    Date::Date(const std::string_view str) {
         if(dateStr_to_ymd(str, year, month, day)) {
             calcDecYear();
         } else {

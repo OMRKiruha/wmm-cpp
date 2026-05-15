@@ -85,7 +85,8 @@ namespace wmm {
      ******************************************************************************/
 
 
-    void BaseErrors(double DeclCoef, double DeclBaseline, double InclOffset, double FOffset, double Multiplier, double H,
+    void BaseErrors(const double DeclCoef, const double DeclBaseline, const double InclOffset, const double FOffset,
+                    const double Multiplier, const double H,
                     double *DeclErr, double *InclErr, double *FErr) {
         double declHorizontalAdjustmentSq;
         declHorizontalAdjustmentSq = (DeclCoef / H) * (DeclCoef / H);
@@ -103,7 +104,7 @@ namespace wmm {
      * OUPUT  DMSstring 	 pointer to DMSString.  Must be at least 30 characters.
      * CALLS : none
      */
-    void DegreeToDMSstring(double DegreesOfArc, int UnitDepth, std::string &out) {
+    void DegreeToDMSstring(const double DegreesOfArc, const int UnitDepth, std::string &out) {
         double temp = DegreesOfArc;
 
         if(UnitDepth > 3) {
@@ -142,7 +143,7 @@ namespace wmm {
      * OUTPUT  DegreesOfArc   decimal degree
      * CALLS : none
      */
-    void DMSstringToDegree(std::string_view DMSstring, double *DegreesOfArc) {
+    void DMSstringToDegree(const std::string_view DMSstring, double *DegreesOfArc) {
         int second, minute, degree, sign = 1, j = 0;
         j = sscanf(DMSstring.data(), "%d, %d, %d", &degree, &minute, &second);
         if(j != 3) {

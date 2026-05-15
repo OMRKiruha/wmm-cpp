@@ -47,7 +47,7 @@ namespace wmm {
      * to UTM projection parameters (zone, hemisphere and central meridian)
      * If any errors occur, the error code(s) are returned by the function, otherwise true is returned.
      */
-    bool UTMParameters::getUtmParameters(double latitude, double longitude, int *zone, char *hemisphere,
+    bool UTMParameters::getUtmParameters(const double latitude, double longitude, int *zone, char *hemisphere,
                                          double *centralMeridian) {
         // latitude out of range
         if((latitude < deg2Rad(UTM_MIN_LAT_DEGREE)) || (latitude > deg2Rad(UTM_MAX_LAT_DEGREE))) {

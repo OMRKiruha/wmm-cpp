@@ -208,7 +208,7 @@ namespace wmm {
      * causing the warning as a double.  This is unnecessary for some warnings. It requires the MagneticModel to determine
      * the current epoch.
      */
-    int warnings(int control, double value, const MagneticModel &magneticModel) {
+    int warnings(const int control, const double value, const MagneticModel &magneticModel) {
         switch(control) {
             case 1:  // Horizontal Field strength low
                 std::cerr << "\nCaution: location is approaching the blackout zone around the magnetic pole as\n"

@@ -20,7 +20,7 @@ namespace wmm {
         secular_Var_Coeff_H.resize(numTerms + 1);
     }
 
-    bool MagneticModel::readModel(std::string_view filename, int array_size) {
+    bool MagneticModel::readModel(const std::string_view filename, const int array_size) {
         std::ifstream file{std::filesystem::path{filename}};
         if(!file.is_open()) {
             return false;

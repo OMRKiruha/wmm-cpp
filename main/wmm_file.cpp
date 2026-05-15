@@ -713,8 +713,9 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-void print_result_file(FILE *outf, double d, double i, double h, double x, double y, double z, double f, double ddot,
-                       double idot, double hdot, double xdot, double ydot, double zdot, double fdot) {
+void print_result_file(FILE *outf, const double d, const double i, const double h, const double x, const double y,
+                       const double z, const double f, const double ddot, const double idot, const double hdot,
+                       const double xdot, const double ydot, const double zdot, const double fdot) {
     int ddeg, ideg;
     double dmin, imin;
     /* Change d and i to deg and min */

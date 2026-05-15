@@ -18,9 +18,9 @@ namespace wmm {
         void geomag(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic, MagneticModel &timedMagneticModel);
 
         void gradY(const Ellipsoid &ellip, const CoordSpherical &coordSpherical, const CoordGeodetic &coordGeodetic,
-                   MagneticModel &timedMagneticModel, const GeoMagneticElements &geoMagneticElements);
+                   const MagneticModel &timedMagneticModel, const GeoMagneticElements &geoMagneticElements);
 
-        int calculateGridVariation(const CoordGeodetic &location);
+        void calculateGridVariation(const CoordGeodetic &location);
 
         void WMMerrorCalc(double H_);
 
@@ -32,30 +32,30 @@ namespace wmm {
 
         GeoMagneticElements operator-(const GeoMagneticElements &subtrahend) const;
 
-        [[maybe_unused]] void errorCalc(GeoMagneticElements B);
+        [[maybe_unused]] void errorCalc(const GeoMagneticElements &B);
 
-        double Decl{};     // 1. Angle between the magnetic field vector and true north, positive east
-        double Incl{};     // 2. Angle between the magnetic field vector and the horizontal plane, positive down
-        double F{};        // 3. Magnetic Field Strength
-        double H{};        // 4. Horizontal Magnetic Field Strength
-        double X{};        // 5. Northern component of the magnetic field vector
-        double Y{};        // 6. Eastern component of the magnetic field vector
-        double Z{};        // 7. Downward component of the magnetic field vector
-        double GV{};       // 8. The Grid Variation
-        double Decldot{};  // 9. Yearly Rate of change in declination
-        double Incldot{};  // 10. Yearly Rate of change in inclination
-        double Fdot{};     // 11. Yearly rate of change in Magnetic field strength
-        double Hdot{};     // 12. Yearly rate of change in horizontal field strength
-        double Xdot{};     // 13. Yearly rate of change in the northern component
-        double Ydot{};     // 14. Yearly rate of change in the eastern component
-        double Zdot{};     // 15. Yearly rate of change in the downward component
-        double GVdot{};    // 16. Yearly rate of change in grid variation
+        double Decl{0.0};     // 1. Angle between the magnetic field vector and true north, positive east
+        double Incl{0.0};     // 2. Angle between the magnetic field vector and the horizontal plane, positive down
+        double F{0.0};        // 3. Magnetic Field Strength
+        double H{0.0};        // 4. Horizontal Magnetic Field Strength
+        double X{0.0};        // 5. Northern component of the magnetic field vector
+        double Y{0.0};        // 6. Eastern component of the magnetic field vector
+        double Z{0.0};        // 7. Downward component of the magnetic field vector
+        double GV{0.0};       // 8. The Grid Variation
+        double Decldot{0.0};  // 9. Yearly Rate of change in declination
+        double Incldot{0.0};  // 10. Yearly Rate of change in inclination
+        double Fdot{0.0};     // 11. Yearly rate of change in Magnetic field strength
+        double Hdot{0.0};     // 12. Yearly rate of change in horizontal field strength
+        double Xdot{0.0};     // 13. Yearly rate of change in the northern component
+        double Ydot{0.0};     // 14. Yearly rate of change in the eastern component
+        double Zdot{0.0};     // 15. Yearly rate of change in the downward component
+        double GVdot{0.0};    // 16. Yearly rate of change in grid variation
 
     private:
         void calculate(const MagneticResults &magneticResultsGeo);
 
         void calculateSecularVariation(const MagneticResults &magneticVariation);
 
-        void calculateGradientElements(const MagneticResults &gradResults, const GeoMagneticElements &magneticElements);
+        void calculateGradientElements(const MagneticResults &gradResults, const GeoMagneticElements &magElem);
     };
 }  // namespace wmm

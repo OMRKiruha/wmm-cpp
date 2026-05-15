@@ -5,26 +5,25 @@
 #include "Geoid.h"
 
 #include "EGM9615.h"
-#include "MagneticUtils.h"
 
 #include <cmath>
+#include <iostream>
 
 namespace wmm {
 
-    Geoid::Geoid() {
-        geoidHeightBuffer = std::make_unique<Geoid::GeoidHeightArray_t>(GeoidHeightsArray);
-        isGeoidInitialized = true;
+    Geoid::Geoid() : isGeoidInitialized(true) {
+        geoidHeightBuffer = std::make_unique<GeoidHeightArray_t>(GeoidHeightsArray);
     }
 
     /** @brief The function returns the height of the EGM96 geiod above or below
      * the WGS84 ellipsoid, at the specified geodetic coordinates, using a grid of height
      * adjustments from the EGM96 gravity model.
      */
-    bool Geoid::getGeoidHeight(double latitude, double longitude, double &deltaHeight) const {
+    bool Geoid::getGeoidHeight(const double latitude, const double longitude, double &deltaHeight) const {
         bool isError{false};
 
         if(!isGeoidInitialized) {
-            printError(5);
+            std::cerr << "\nError initializing Geoid.\n";
             return false;
         }
         if((latitude < -90) || (latitude > 90)) {      // latitude out of range
@@ -72,9 +71,9 @@ namespace wmm {
             const double upperY = elevationNW + (deltaX * (elevationNE - elevationNW));
             const double lowerY = elevationSW + (deltaX * (elevationSE - elevationSW));
 
-            deltaHeight = upperY + deltaY * (lowerY - upperY);
+            deltaHeight = upperY + (deltaY * (lowerY - upperY));
         } else {
-            printError(17);
+            std::cerr << "\nError: Latitude OR Longitude out of range in getGeoidHeight\n";
             return false;
         }
         return true;

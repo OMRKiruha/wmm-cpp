@@ -11,7 +11,7 @@
 namespace wmm {
 
     SphericalHarmonicVariables::SphericalHarmonicVariables(const Ellipsoid &ellip, const CoordSpherical &coordSpherical,
-                                                           int nMax) {
+                                                           const int nMax) {
         relativeRadiusPower.resize(nMax + 1);
         cos_mlambda.resize(nMax + 1);
         sin_mlambda.resize(nMax + 1);

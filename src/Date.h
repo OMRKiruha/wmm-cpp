@@ -9,7 +9,7 @@
 namespace wmm {
     struct Date {
         Date();
-        Date(std::string_view str);
+        explicit Date(std::string_view str);
 
         void calcDecYear();
 
