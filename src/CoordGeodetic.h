@@ -16,10 +16,10 @@ namespace wmm {
         static void equivalentLatLon(double lat, double lon, double &repairedLat, double &repairedLon);
         bool convertGeoidToEllipsoidHeight(const Geoid &geoid);
 
-        double lambda{};                // geodetic longitude
-        double phi{};                   // geodetic latitude
-        double heightAboveEllipsoid{};  // height above the ellipsoid (HaE)
-        double heightAboveGeoid{};      // height above the EGM96 geoid model
-        bool isUseGeoid{true};          // by default use geoid in calculations
+        double lambda{0.0};                // geodetic longitude
+        double phi{0.0};                   // geodetic latitude
+        double heightAboveEllipsoid{0.0};  // height above the ellipsoid (HaE)
+        double heightAboveGeoid{0.0};      // height above the EGM96 geoid model
+        bool isUseGeoid{true};             // by default use geoid in calculations
     };
 }  // namespace wmm

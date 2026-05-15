@@ -33,7 +33,7 @@ namespace wmm {
 
         // compute ECEF Cartesian coordinates of specified point (for longitude=0)
         const double xp = (rc + coordGeodetic.heightAboveEllipsoid) * cosLat;
-        const double zp = (rc * (1.0 - ellip.epssq) + coordGeodetic.heightAboveEllipsoid) * sinLat;
+        const double zp = ((rc * (1.0 - ellip.epssq)) + coordGeodetic.heightAboveEllipsoid) * sinLat;
 
         // compute spherical radius and angle lambdag and phi of specified point
         r = std::sqrt((xp * xp) + (zp * zp));

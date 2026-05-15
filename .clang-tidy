@@ -45,4 +45,5 @@ performance-*,
 -performance-avoid-endl,
 portability-simd-intrinsics,
 readability-*,
--readability-identifier-length'
+-readability-identifier-length,
+-readability-magic-numbers'
