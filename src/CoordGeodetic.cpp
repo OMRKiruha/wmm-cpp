@@ -76,7 +76,7 @@ namespace wmm {
         // 6.0 compute longitude east of Greenwich
         double zlong = atan2(y, x);
         if(zlong < 0.0) {
-            zlong = zlong + (2 * M_PI);
+            zlong = zlong + (2 * std::numbers::pi);
         }
 
         lambda = rad2Deg(zlong);

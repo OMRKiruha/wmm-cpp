@@ -42,8 +42,8 @@ namespace wmm {
         Zdot    = magneticVariation.Bz;
         Hdot    = (X * Xdot + Y * Ydot) / H;  // See equation 19 in the WMM technical report
         Fdot    = (X * Xdot + Y * Ydot + Z * Zdot) / F;
-        Decldot = 180.0 / M_PI * (X * Ydot - Y * Xdot) / (H * H);
-        Incldot = 180.0 / M_PI * (H * Zdot - Z * Hdot) / (F * F);
+        Decldot = 180.0 / std::numbers::pi * (X * Ydot - Y * Xdot) / (H * H);
+        Incldot = 180.0 / std::numbers::pi * (H * Zdot - Z * Hdot) / (F * F);
         GVdot   = Decldot;
     }
 
@@ -55,8 +55,8 @@ namespace wmm {
 
         H    = (X * magneticElements.X + Y * magneticElements.Y) / magneticElements.H;
         F    = (X * magneticElements.X + Y * magneticElements.Y + Z * magneticElements.Z) / magneticElements.F;
-        Decl = 180.0 / M_PI * (magneticElements.X * Y - magneticElements.Y * X) / (magneticElements.H * magneticElements.H);
-        Incl = 180.0 / M_PI * (magneticElements.H * Z - magneticElements.Z * H) / (magneticElements.F * magneticElements.F);
+        Decl = 180.0 / std::numbers::pi * (magneticElements.X * Y - magneticElements.Y * X) / (magneticElements.H * magneticElements.H);
+        Incl = 180.0 / std::numbers::pi * (magneticElements.H * Z - magneticElements.Z * H) / (magneticElements.F * magneticElements.F);
         GV   = Decl;
     }
 

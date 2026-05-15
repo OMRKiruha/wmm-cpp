@@ -56,19 +56,19 @@ namespace wmm {
         }
 
         // longitude out of range
-        if((longitude < -M_PI) || (longitude > (2 * M_PI))) {
+        if((longitude < -std::numbers::pi) || (longitude > (2 * std::numbers::pi))) {
             printError(24);
             return true;
         }
 
         if(longitude < 0) {
-            longitude += (2 * M_PI) + 1.0e-10;
+            longitude += (2 * std::numbers::pi) + 1.0e-10;
         }
         const long Lat_Degrees  = static_cast<long>(rad2Deg(latitude));
         const long Long_Degrees = static_cast<long>(rad2Deg(longitude));
 
         long temp_zone{};
-        if(longitude < M_PI) {
+        if(longitude < std::numbers::pi) {
             temp_zone = static_cast<long>(31 + (rad2Deg(longitude) / 6.0));
         } else {
             temp_zone = static_cast<long>((rad2Deg(longitude) / 6.0) - 29);

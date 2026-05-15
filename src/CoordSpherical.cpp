@@ -13,8 +13,8 @@
 namespace wmm {
 
     void CoordSpherical::toCartesian(double &x, double &y, double &z) const {
-        const double radphi    = phig * (M_PI / 180);
-        const double radlambda = lambdag * (M_PI / 180);
+        const double radphi    = phig * (std::numbers::pi / 180);
+        const double radlambda = lambdag * (std::numbers::pi / 180);
 
         x = r * cos(radphi) * cos(radlambda);
         y = r * cos(radphi) * sin(radlambda);

@@ -12,11 +12,11 @@ namespace wmm {
     struct MagneticModel;
 
     static double rad2Deg(const double rad) {
-        return rad * (180.0 / M_PI);
+        return rad * (180.0 / std::numbers::pi);
     }
 
     static double deg2Rad(const double deg) {
-        return deg * (M_PI / 180.0);
+        return deg * (std::numbers::pi / 180.0);
     }
 
     bool dateStr_to_ymd(std::string_view str, int &year, int &month, int &day);

@@ -211,7 +211,7 @@ namespace wmm {
     void MagneticResults::rotateMagneticVector(const CoordSpherical &coordSpherical, const CoordGeodetic &coordGeodetic,
                                                const MagneticResults &magneticResultsSph) {
         // Difference between the spherical and Geodetic latitudes
-        const double psi = (M_PI / 180) * (coordSpherical.phig - coordGeodetic.phi);
+        const double psi = (std::numbers::pi / 180) * (coordSpherical.phig - coordGeodetic.phi);
 
         // Rotate spherical field components to the Geodetic system
         Bz = magneticResultsSph.Bx * sin(psi) + magneticResultsSph.Bz * cos(psi);
