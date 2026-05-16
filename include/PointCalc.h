@@ -14,11 +14,11 @@ namespace wmm {
     struct GeoMagneticElements;
 
     void pointCalc(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic, const CoordSpherical &coordSpherical,
-                   const Date &userDate, const MagneticModel &magneticModel, GeoMagneticElements *geoMagneticElements,
-                   GeoMagneticElements *errors);
+                   const Date &userDate, const MagneticModel &magneticModel, GeoMagneticElements &geoMagneticElements,
+                   GeoMagneticElements &errors);
 
     void pointCalc(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic, const Date &userDate,
-                   const MagneticModel &magneticModel, GeoMagneticElements *geoMagneticElements,
-                   GeoMagneticElements *errors);
+                   const MagneticModel &magneticModel, GeoMagneticElements &geoMagneticElements,
+                   GeoMagneticElements &errors);
 
 }  // namespace wmm

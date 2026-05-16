@@ -70,7 +70,7 @@ int main() {
             coordGeodetic.convertGeoidToEllipsoidHeight(geoid);
             // Convert from geodetic to Spherical Equations: 17-18, WMM Technical report
             coordSpherical.fromGeodetic(ellip, coordGeodetic);
-            pointCalc(ellip, coordGeodetic, coordSpherical, userDate, magneticModel, &geoMagneticElements, &errors);
+            pointCalc(ellip, coordGeodetic, coordSpherical, userDate, magneticModel, geoMagneticElements, errors);
 
             if(geoMagneticElements.H <= 2000.0) {
                 std::cout << std::endl << BOZ_WARN_TEXT_STRONG << std::endl;

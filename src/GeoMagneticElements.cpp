@@ -150,7 +150,7 @@ namespace wmm {
         Y                              = WMM_UNCERTAINTY_Y;
         const double decl_variable     = (WMM_UNCERTAINTY_D_COEF / H_);
         constexpr double decl_constant = WMM_UNCERTAINTY_D_OFFSET;
-        Decl                           = sqrt((decl_constant * decl_constant) + (decl_variable * decl_variable));
+        Decl                           = std::sqrt((decl_constant * decl_constant) + (decl_variable * decl_variable));
         Decl                           = std::min<double>(Decl, 180);
     }
 
@@ -163,7 +163,7 @@ namespace wmm {
         Y                              = WMMHR_UNCERTAINTY_Y;
         const double decl_variable     = (WMMHR_UNCERTAINTY_D_COEF / H_);
         constexpr double decl_constant = WMMHR_UNCERTAINTY_D_OFFSET;
-        Decl                           = sqrt((decl_constant * decl_constant) + (decl_variable * decl_variable));
+        Decl                           = std::sqrt((decl_constant * decl_constant) + (decl_variable * decl_variable));
         Decl                           = std::min<double>(Decl, 180);
     }
 
@@ -229,18 +229,18 @@ namespace wmm {
     /** @brief Errors.Decl, Errors.Incl, Errors.F are all assumed to exist
      */
     [[maybe_unused]] void GeoMagneticElements::errorCalc(const GeoMagneticElements &B) {
-        const double cos2D = cos(deg2Rad(B.Decl)) * cos(deg2Rad(B.Decl));
-        const double cos2I = cos(deg2Rad(B.Incl)) * cos(deg2Rad(B.Incl));
-        const double sin2D = sin(deg2Rad(B.Decl)) * sin(deg2Rad(B.Decl));
-        const double sin2I = sin(deg2Rad(B.Incl)) * sin(deg2Rad(B.Incl));
+        const double cos2D = std::cos(deg2Rad(B.Decl)) * std::cos(deg2Rad(B.Decl));
+        const double cos2I = std::cos(deg2Rad(B.Incl)) * std::cos(deg2Rad(B.Incl));
+        const double sin2D = std::sin(deg2Rad(B.Decl)) * std::sin(deg2Rad(B.Decl));
+        const double sin2I = std::sin(deg2Rad(B.Incl)) * std::sin(deg2Rad(B.Incl));
         const double eD    = deg2Rad(Decl);
         const double eI    = deg2Rad(Incl);
         const double EDSq  = eD * eD;
         const double EISq  = eI * eI;
-        X = sqrt((cos2D * cos2I * F * F) + (B.F * B.F * sin2D * cos2I * EDSq) + (B.F * B.F * cos2D * sin2I * EISq));
-        Y = sqrt((sin2D * cos2I * F * F) + (B.F * B.F * cos2D * cos2I * EDSq) + (B.F * B.F * sin2D * sin2I * EISq));
-        Z = sqrt((sin2I * F * F) + (B.F * B.F * cos2I * EISq));
-        H = sqrt((cos2I * F * F) + (B.F * B.F * sin2I * EISq));
+        X = std::sqrt((cos2D * cos2I * F * F) + (B.F * B.F * sin2D * cos2I * EDSq) + (B.F * B.F * cos2D * sin2I * EISq));
+        Y = std::sqrt((sin2D * cos2I * F * F) + (B.F * B.F * cos2D * cos2I * EDSq) + (B.F * B.F * sin2D * sin2I * EISq));
+        Z = std::sqrt((sin2I * F * F) + (B.F * B.F * cos2I * EISq));
+        H = std::sqrt((cos2I * F * F) + (B.F * B.F * sin2I * EISq));
     }
 
     void GeoMagneticElements::calculate(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic,
@@ -251,10 +251,10 @@ namespace wmm {
     }
 
     void BaseErrors(const double declCoef, const double declBaseline, const double inclOffset, const double fOffset,
-                    const double multiplier, const double H, double *declErr, double *inclErr, double *fErr) {
+                    const double multiplier, const double H, double &declErr, double &inclErr, double &fErr) {
         const double declHorizontalAdjustmentSq = (declCoef / H) * (declCoef / H);
-        *declErr = sqrt(declHorizontalAdjustmentSq + (declBaseline * declBaseline)) * multiplier;
-        *inclErr = inclOffset * multiplier;
-        *fErr    = fOffset * multiplier;
+        declErr = std::sqrt(declHorizontalAdjustmentSq + (declBaseline * declBaseline)) * multiplier;
+        inclErr = inclOffset * multiplier;
+        fErr    = fOffset * multiplier;
     }
 }  // namespace wmm

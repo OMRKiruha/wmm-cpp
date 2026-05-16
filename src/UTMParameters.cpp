@@ -22,7 +22,7 @@ namespace wmm {
 
         char hemisphere{};
         double Lam0{};
-        getUtmParameters(phi, lambda, &zone, &hemisphere, &Lam0);
+        getUtmParameters(phi, lambda, zone, hemisphere, Lam0);
 
         double falseN{};
         if(hemisphere == 'n' || hemisphere == 'N') {
@@ -37,7 +37,7 @@ namespace wmm {
         const Ellipsoid wgs86{};
         constexpr int XYonly = 0;
         double CoM{};
-        TMfwd4(wgs86, Lam0, falseE, falseN, XYonly, lambda, phi, &easting, &northing, &pointScale, &CoM);
+        TMfwd4(wgs86, Lam0, falseE, falseN, XYonly, lambda, phi, easting, northing, pointScale, CoM);
 
         // Report results
         hemiSphere             = hemisphere;
@@ -49,8 +49,8 @@ namespace wmm {
      * to UTM projection parameters (zone, hemisphere and central meridian)
      * If any errors occur, the error code(s) are returned by the function, otherwise true is returned.
      */
-    bool UTMParameters::getUtmParameters(const double latitude, double longitude, int *zone, char *hemisphere,
-                                         double *centralMeridian) {
+    bool UTMParameters::getUtmParameters(const double latitude, double longitude, int &zone, char &hemisphere,
+                                         double &centralMeridian) {
         // latitude out of range
         if((latitude < deg2Rad(UTM_MIN_LAT_DEGREE)) || (latitude > deg2Rad(UTM_MAX_LAT_DEGREE))) {
             std::cerr << "\nError: Latitude out of range in getUtmParameters\n";
@@ -101,17 +101,17 @@ namespace wmm {
         }
 
         if(temp_zone >= 31) {
-            *centralMeridian = deg2Rad((6 * temp_zone) - 183);
+            centralMeridian = deg2Rad((6 * temp_zone) - 183);
         } else {
-            *centralMeridian = deg2Rad((6 * temp_zone) + 177);
+            centralMeridian = deg2Rad((6 * temp_zone) + 177);
         }
 
-        *zone = temp_zone;
+        zone = temp_zone;
 
         if(latitude < 0) {
-            *hemisphere = 'S';
+            hemisphere = 'S';
         } else {
-            *hemisphere = 'N';
+            hemisphere = 'N';
         }
 
         return false;
@@ -122,8 +122,8 @@ namespace wmm {
      *   C software written by:  K. Robins
      */
     void UTMParameters::TMfwd4(const Ellipsoid &ellip, const double Lam0, const double falseE, const double falseN,
-                               const int XYonly, const double Lambda, const double Phi, double *X, double *Y, double *pscale,
-                               double *CoM) {
+                               const int XYonly, const double Lambda, const double Phi, double &X, double &Y, double &pscale,
+                               double &CoM) {
         // Ellipsoid to sphere
         // Convert longitude (Greenwhich) to longitude from the central meridian
         // It is unnecessary to find the (-Pi, Pi] equivalent of the result.
@@ -196,13 +196,13 @@ namespace wmm {
         Ystar        = Ystar + V;
 
         // Apply isoperimetric radius, scale adjustment, and offsets
-        *X = (ellip.K0R4 * Xstar) + falseE;
-        *Y = (ellip.K0R4 * Ystar) + falseN;
+        X = (ellip.K0R4 * Xstar) + falseE;
+        Y = (ellip.K0R4 * Ystar) + falseN;
 
         // Point-scale and CoM
         if(XYonly == 1) {
-            *pscale = ellip.K0;
-            *CoM    = 0;
+            pscale = ellip.K0;
+            CoM    = 0;
         } else {
             double sig1 = 8 * ellip.Acoeff.at(3) * c8u * c8v;
             sig1        = sig1 + (6 * ellip.Acoeff.at(2) * c6u * c6v);
@@ -218,8 +218,8 @@ namespace wmm {
             // Combined square roots
             const double comroo = sqrt((1 - (ellip.epssq * sinPhi * sinPhi)) * denom2 * ((sig1 * sig1) + (sig2 * sig2)));
 
-            *pscale = ellip.K0R4oa * 2 * denom * comroo;
-            *CoM    = atan2(SChi * sinLam, cosLam) + atan2(sig2, sig1);
+            pscale = ellip.K0R4oa * 2 * denom * comroo;
+            CoM    = atan2(SChi * sinLam, cosLam) + atan2(sig2, sig1);
         }
     }
 

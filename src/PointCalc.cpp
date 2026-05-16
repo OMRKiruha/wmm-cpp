@@ -13,19 +13,19 @@ namespace wmm {
      * covert to Ellipsoid height
      */
     void pointCalc(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic, const CoordSpherical &coordSpherical,
-                    const Date &userDate, const MagneticModel &magneticModel, GeoMagneticElements *geoMagneticElements,
-                    GeoMagneticElements *errors) {
+                   const Date &userDate, const MagneticModel &magneticModel, GeoMagneticElements &geoMagneticElements,
+                   GeoMagneticElements &errors) {
         // Time adjust the coefficients, Equation 19, WMM Technical report
         MagneticModel timedMagneticModel{magneticModel.applyDate(userDate)};
 
         // Computes the geoMagnetic field elements and their time change
-        geoMagneticElements->calculate(ellip, coordSpherical, coordGeodetic, timedMagneticModel);
+        geoMagneticElements.calculate(ellip, coordSpherical, coordGeodetic, timedMagneticModel);
 
-        geoMagneticElements->calculateGridVariation(coordGeodetic);
+        geoMagneticElements.calculateGridVariation(coordGeodetic);
 #ifdef WMMHR
-        errors->WMMHRErrorCalc(geoMagneticElements->H);
+        errors.WMMHRErrorCalc(geoMagneticElements.H);
 #else
-        errors->WMMerrorCalc(geoMagneticElements->H);
+        errors.WMMerrorCalc(geoMagneticElements.H);
 #endif
     }
 
@@ -33,19 +33,19 @@ namespace wmm {
      * covert to Ellipsoid height
      */
     void pointCalc(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic, const Date &userDate,
-                    const MagneticModel &magneticModel, GeoMagneticElements *geoMagneticElements,
-                    GeoMagneticElements *errors) {
+                   const MagneticModel &magneticModel, GeoMagneticElements &geoMagneticElements,
+                   GeoMagneticElements &errors) {
         // Time adjust the coefficients, Equation 19, WMM Technical report
         MagneticModel timedMagneticModel{magneticModel.applyDate(userDate)};
 
         // Computes the geoMagnetic field elements and their time change
-        geoMagneticElements->calculate(ellip, coordGeodetic, timedMagneticModel);
+        geoMagneticElements.calculate(ellip, coordGeodetic, timedMagneticModel);
 
-        geoMagneticElements->calculateGridVariation(coordGeodetic);
+        geoMagneticElements.calculateGridVariation(coordGeodetic);
 #ifdef WMMHR
-        errors->WMMHRErrorCalc(geoMagneticElements->H);
+        errors.WMMHRErrorCalc(geoMagneticElements.H);
 #else
-        errors->WMMerrorCalc(geoMagneticElements->H);
+        errors.WMMerrorCalc(geoMagneticElements.H);
 #endif
     }
 

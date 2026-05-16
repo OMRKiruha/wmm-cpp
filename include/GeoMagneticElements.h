@@ -13,7 +13,7 @@ namespace wmm {
 
     struct GeoMagneticElements {
         void calculate(const Ellipsoid &ellip, const CoordSpherical &coordSpherical, const CoordGeodetic &coordGeodetic,
-                    MagneticModel &timedMagneticModel);
+                       MagneticModel &timedMagneticModel);
 
         void calculate(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic, MagneticModel &timedMagneticModel);
 
@@ -60,5 +60,5 @@ namespace wmm {
     };
 
     void BaseErrors(double declCoef, double declBaseline, double inclOffset, double fOffset, double multiplier, double H,
-                double *declErr, double *inclErr, double *fErr);
+                    double &declErr, double &inclErr, double &fErr);
 }  // namespace wmm

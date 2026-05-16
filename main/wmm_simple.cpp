@@ -71,7 +71,7 @@ int main() {
             coordGeodetic.lambda = 40.8;
             coordGeodetic.phi    = 50.4;
             // Calculate geomagnetic elements in point with geodetic coordinates in current date
-            pointCalc(ellip, coordGeodetic, userDate, timedMagneticModel, &geoMagneticElements, &errors);
+            pointCalc(ellip, coordGeodetic, userDate, timedMagneticModel, geoMagneticElements, errors);
 
             if(geoMagneticElements.H <= 2000.0) {
                 std::cout << std::endl << BOZ_WARN_TEXT_STRONG << std::endl;
