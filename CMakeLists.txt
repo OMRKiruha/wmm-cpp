@@ -15,15 +15,24 @@ file(GLOB_RECURSE SOURCES "include/*" "src/*")
 #message("\n${Yellow}==> Sources: ${SOURCES} ${ColourReset}")
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
-target_include_directories(${PROJECT_NAME} PUBLIC "include" "src")
+target_include_directories(${PROJECT_NAME} PUBLIC "include")
 
-add_executable(wmm_file "./main/wmm_file.cpp")
+add_executable(wmm_file
+        "./main/wmm_file.cpp"
+        "./main/GeomagInteractiveLib.cpp"
+)
 target_link_libraries(wmm_file PRIVATE ${PROJECT_NAME})
 
-add_executable(wmm_grid "./main/wmm_grid.cpp")
+add_executable(wmm_grid
+        "./main/wmm_grid.cpp"
+        "./main/GeomagInteractiveLib.cpp"
+)
 target_link_libraries(wmm_grid PRIVATE ${PROJECT_NAME})
 
-add_executable(wmm_point "./main/wmm_point.cpp")
+add_executable(wmm_point
+        "./main/wmm_point.cpp"
+        "./main/GeomagInteractiveLib.cpp"
+)
 target_link_libraries(wmm_point PRIVATE ${PROJECT_NAME})
 
 add_custom_command(

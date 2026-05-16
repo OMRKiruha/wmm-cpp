@@ -1,13 +1,13 @@
-#include <stdio.h>
-#include <string.h>
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 
-#include "GeomagnetismHeader.h"
-#include "EGM9615.h"
-#include "version.h"
 #include "GeomagInterativeLib.h"
+#include "GeomagnetismHeader.h"
+
+#include "wmm_warn.h"
 
 /*
 WMMHR grid program.
@@ -15,7 +15,7 @@ WMMHR grid program.
 The Geomagnetism Library is used to make a command prompt program. The program prompts
 the user to enter a location, performs the computations and prints the results to the
 standard output. The program expects the files GeomagnetismLibrary.c, GeomagnetismHeader.h,
-EWMM.COF and EGM9615.h to be in the same directory. 
+EWMM.COF and EGM9615.h to be in the same directory.
 
 Manoj.C.Nair@Noaa.Gov
 April 21, 2011
@@ -24,52 +24,23 @@ liyin.young@noaa.gov
 Updated April, 2023
  */
 
-int Grid(wmm::CoordGeodetic minimum,
-        wmm::CoordGeodetic maximum,
-        double cord_step_size, 
-        double altitude_step_size, 
-        double time_step, 
-        wmm::MagneticModel *MagneticModel,
-        wmm::Geoid *Geoid,
-        wmm::Ellipsoid Ellip,
-        wmm::Date StartDate,
-        wmm::Date EndDate,
-        int ElementOption, 
-        int UncertaintyOption, 
-        int PrintOption, 
-        char *OutputFile);
+int Grid(wmm::CoordGeodetic minimum, wmm::CoordGeodetic maximum, double cord_step_size, double altitude_step_size,
+         double time_step, wmm::MagneticModel *MagneticModel, wmm::Geoid *Geoid, wmm::Ellipsoid Ellip, wmm::Date StartDate,
+         wmm::Date EndDate, int ElementOption, int UncertaintyOption, int PrintOption, char *OutputFile);
 
-const char* BOZ_WARN_TEXT_STRONG = "Warning: some calculated locations are "
-                                   "in the blackout zone "
-                                   "around the magnetic pole\nas defined by "
-                                   "the WMM military specification \n(https://"
-                                   "www.ngdc.noaa.gov/geomag/WMM/data/MIL-PRF-"
-                                   "89500B.pdf).\nCompass accuracy is highly "
-                                   "degraded in this region.\n";
-const char* BOZ_WARN_TEXT_WEAK = "Caution: some calculated locations approach "
-                                "the blackout zone around the magnetic\npole "
-                                "as defined by the WMM military specification "
-                                "\n(https://www.ngdc.noaa.gov/geomag/WMM/data/"
-                                "MIL-PRF-89500B.pdf).\n Compass accuracy may "
-                                "be degraded in this region.\n";
-
-const char* WMM_MileSpec_INFO = "Warning: The height validity of the geomagnetic components is dependent on the geomagnetic activity level. For more information see \n(https://www.ncei.noaa.gov/products/world-magnetic-model/accuracy-limitations-error-model)\n";
-const char* WMM_MileSpec_WARN = "Warning: WMM will not meet MilSpec at this altitude. For more information see \n(https://www.ncei.noaa.gov/products/world-magnetic-model/accuracy-limitations-error-model)\n";
-
-int main()
-{
-    MagneticModel * MagneticModels[1];
-    Ellipsoid Ellip;
-    CoordGeodetic minimum, maximum;
-    Geoid Geoid;
-    Date startdate, enddate;
+int main() {
+    wmm::MagneticModel *MagneticModels[1];
+    wmm::Ellipsoid Ellip;
+    wmm::CoordGeodetic minimum, maximum;
+    wmm::Geoid Geoid;
+    wmm::Date startdate, enddate;
     int ElementOption, PrintOption, i, epochs = 1, UncertaintyOption = 1;
     double cord_step_size, altitude_step_size, time_step_size;
-    #ifdef WMMHR
-        char filename[] = "WMMHR.COF";
-    #else
-        char filename[] = "WMM.COF";
-    #endif
+#ifdef WMMHR
+    char filename[] = "WMMHR.COF";
+#else
+    char filename[] = "WMM.COF";
+#endif
     char OutputFilename[32];
     char VersionDate[12];
     char ans[20];
@@ -79,19 +50,19 @@ int main()
         fgets(ans, 20, stdin);
         return 1;
     }
-    strncpy(VersionDate, VERSIONDATE_LARGE + 39, 11);
+    strncpy(VersionDate, VERSION_DATE_LARGE + 39, 11);
     VersionDate[11] = '\0';
 
     SetDefaults(&Ellip, &Geoid);
     /* Set EGM96 Geoid parameters */
-    Geoid.geoidHeightBuffer = std::make_unique<wmm::Geoid::GeoidHeightArray_t>(GeoidHeightBuffer);
+    Geoid.geoidHeightBuffer  = std::make_unique<wmm::Geoid::GeoidHeightArray_t>(GeoidHeightBuffer);
     Geoid.isGeoidInitialized = 1;
-    /* Set EGM96 Geoid parameters END */
-    #ifdef WMMHR
-        printf("\n\n Welcome to the World Magnetic Model High-Resolution(WMMHR) %d C-Program\n",(int) MagneticModels[0]->epoch);
-    #else
-        printf("\n\n Welcome to the World Magnetic Model (WMM) %d C-Program\n",(int) MagneticModels[0]->epoch);
-    #endif    
+/* Set EGM96 Geoid parameters END */
+#ifdef WMMHR
+    printf("\n\n Welcome to the World Magnetic Model High-Resolution(WMMHR) %d C-Program\n", (int)MagneticModels[0]->epoch);
+#else
+    printf("\n\n Welcome to the World Magnetic Model (WMM) %d C-Program\n", (int)MagneticModels[0]->epoch);
+#endif
     printf("of the US National Centers for Environmental Information\n\t\t--- Grid Calculation Program ----\n\t");
     printf("       --- Model Release Date: %s ---\n\t", MODEL_RELEASE_DATE);
     printf("      --- Software Release Date: %s ---\n", VersionDate);
@@ -107,12 +78,14 @@ int main()
 
     /* Get the Lat/Long, Altitude, Time limits from a user interface and print the grid to screen */
 
-    GetUserGrid(&minimum, &maximum, &cord_step_size, &altitude_step_size, &time_step_size, &startdate, &enddate, &ElementOption, &PrintOption, OutputFilename, &Geoid, MagneticModels[0]);
-    Grid(minimum, maximum, cord_step_size, altitude_step_size, time_step_size, MagneticModels[0], &Geoid, Ellip, startdate, enddate, ElementOption, UncertaintyOption, PrintOption, OutputFilename);
+    GetUserGrid(&minimum, &maximum, &cord_step_size, &altitude_step_size, &time_step_size, &startdate, &enddate,
+                &ElementOption, &PrintOption, OutputFilename, &Geoid, MagneticModels[0]);
+    Grid(minimum, maximum, cord_step_size, altitude_step_size, time_step_size, MagneticModels[0], &Geoid, Ellip, startdate,
+         enddate, ElementOption, UncertaintyOption, PrintOption, OutputFilename);
 
-    for(i = 0; i < epochs; i++) FreeMagneticModelMemory(MagneticModels[i]);
-
-
+    for(i = 0; i < epochs; i++) {
+        FreeMagneticModelMemory(MagneticModels[i]);
+    }
 
 
     printf("\nPress any key to exit...\n");
@@ -121,9 +94,9 @@ int main()
     return 0;
 }
 
-int Grid(CoordGeodetic minimum, CoordGeodetic maximum, double
-        cord_step_size, double altitude_step_size, double time_step, MagneticModel *MagneticModel, Geoid
-        *Geoid, Ellipsoid Ellip, Date StartDate, Date EndDate, int ElementOption, int UncertaintyOption, int PrintOption, char *OutputFile)
+int Grid(CoordGeodetic minimum, CoordGeodetic maximum, double cord_step_size, double altitude_step_size, double time_step,
+         MagneticModel *MagneticModel, Geoid *Geoid, Ellipsoid Ellip, Date StartDate, Date EndDate, int ElementOption,
+         int UncertaintyOption, int PrintOption, char *OutputFile)
 
 /*This function calls WMM subroutines to generate a grid as defined by the user. The function may be used
 to generate a grid of magnetic field elements, time series or a profile. The selected geomagnetic element
@@ -151,24 +124,15 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
                         double *Secular_Var_Coeff_H;  CD - Gauss coefficients of secular geomagnetic model (nT/yr)
                         int nMax;  Maximum degree of spherical harmonic model
                         int nMaxSecVar; Maxumum degree of spherical harmonic secular model
-                        int SecularVariationUsed; Whether or not the magnetic secular variation vector will be needed by program
-                Geoid :  data structure with the following elements
-        Pointer to data structure Geoid with the following elements
-                        int numbGeoidCols ;   ( 360 degrees of longitude at 15 minute spacing )
-                        int numbGeoidRows ;   ( 180 degrees of latitude  at 15 minute spacing )
-                        int numbHeaderItems ;    ( min, max lat, min, max long, lat, long spacing )
-                        int	scaleFactor;    ( 4 grid cells per degree at 15 minute spacing  )
-                        float *geoidHeightBuffer;   (Pointer to the memory to store the Geoid elevation data )
-                        int numbGeoidElevs;    (number of points in the gridded file )
-                        int  isGeoidInitialized ;  ( indicates successful initialization )
-   Ellip  data  structure with the following elements
-                        double a; semi-major axis of the ellipsoid
-                        double b; semi-minor axis of the ellipsoid
-                        double fla;  flattening
-                        double epssq; first eccentricity squared
-                        double eps;  first eccentricity
-                        double re; mean radius of  ellipsoid
-          ElementOption : int : Geomagnetic Element to print
+                        int SecularVariationUsed; Whether or not the magnetic secular variation vector will be needed by
+program Geoid :  data structure with the following elements Pointer to data structure Geoid with the following elements int
+numbGeoidCols ;   ( 360 degrees of longitude at 15 minute spacing ) int numbGeoidRows ;   ( 180 degrees of latitude  at 15
+minute spacing ) int numbHeaderItems ;    ( min, max lat, min, max long, lat, long spacing ) int	scaleFactor;    ( 4 grid
+cells per degree at 15 minute spacing  ) float *geoidHeightBuffer;   (Pointer to the memory to store the Geoid elevation data
+) int numbGeoidElevs;    (number of points in the gridded file ) int  isGeoidInitialized ;  ( indicates successful
+initialization ) Ellip  data  structure with the following elements double a; semi-major axis of the ellipsoid double b;
+semi-minor axis of the ellipsoid double fla;  flattening double epssq; first eccentricity squared double eps;  first
+eccentricity double re; mean radius of  ellipsoid ElementOption : int : Geomagnetic Element to print
  *        UncertaintyOption: int: 1-Append uncertainties.  Otherwise do not append uncertainties.
           PrintOption : int : 1 Print to File, Otherwise, print to screen
 
@@ -176,13 +140,13 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
 
    CALLS : AllocateModelMemory To allocate memory for model coefficients
       TimelyModifyMagneticModel This modifies the Magnetic coefficients to the correct date.
-                  ConvertGeoidToEllipsoidHeight (&CoordGeodetic, &Geoid);   Convert height above msl to height above WGS-84 ellipsoid
-                  GeodeticToSpherical Convert from geodeitic to Spherical Equations: 7-8, WMM Technical report
+                  ConvertGeoidToEllipsoidHeight (&CoordGeodetic, &Geoid);   Convert height above msl to height above WGS-84
+ellipsoid GeodeticToSpherical Convert from geodeitic to Spherical Equations: 7-8, WMM Technical report
                   ComputeSphericalHarmonicVariables Compute Spherical Harmonic variables
                   AssociatedLegendreFunction Compute ALF  Equations 5-6, WMM Technical report
                   summation Accumulate the spherical harmonic coefficients Equations 10:12 , WMM Technical report
-                  rotateMagneticVector Map the computed Magnetic fields to Geodeitic coordinates Equation 16 , WMM Technical report
-                  CalculateGeoMagneticElements Calculate the geoMagnetic elements, Equation 18 , WMM Technical report
+                  rotateMagneticVector Map the computed Magnetic fields to Geodeitic coordinates Equation 16 , WMM Technical
+report CalculateGeoMagneticElements Calculate the geoMagnetic elements, Equation 18 , WMM Technical report
 
  */
 {
@@ -196,98 +160,125 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
     GeoMagneticElements GeoMagneticElements, Errors;
     LegendreFunction *LegendreFunction;
     Gradient Gradient;
-    int print_boz_warning_weak = FALSE;
+    int print_boz_warning_weak   = FALSE;
     int print_boz_warning_strong = FALSE;
-    int print_alt_warning = FALSE;
-    double min_wgsalt = -1;
-    double max_wgsalt = 1900;
-    
+    int print_alt_warning        = FALSE;
+    double min_wgsalt            = -1;
+    double max_wgsalt            = 1900;
+
     FILE *fileout = NULL;
 
-    if(PrintOption == 1)
-    {
+    if(PrintOption == 1) {
         fileout = fopen(OutputFile, "w");
-        if(!fileout)
-        {
+        if(!fileout) {
             printf("Error opening %s to write", OutputFile);
             return FALSE;
         }
     }
 
 
+    if(fabs(cord_step_size) < 1.0e-10) {
+        cord_step_size = 99999.0; /*checks to make sure that the step_size is not too small*/
+    }
+    if(fabs(altitude_step_size) < 1.0e-10) {
+        altitude_step_size = 99999.0;
+    }
+    if(fabs(time_step) < 1.0e-10) {
+        time_step = 99999.0;
+    }
 
-    if(fabs(cord_step_size) < 1.0e-10) cord_step_size = 99999.0; /*checks to make sure that the step_size is not too small*/
-    if(fabs(altitude_step_size) < 1.0e-10) altitude_step_size = 99999.0;
-    if(fabs(time_step) < 1.0e-10) time_step = 99999.0;
 
-
-    NumTerms = ((MagneticModel->nMax + 1) * (MagneticModel->nMax + 2) / 2);
+    NumTerms           = ((MagneticModel->nMax + 1) * (MagneticModel->nMax + 2) / 2);
     TimedMagneticModel = AllocateModelMemory(NumTerms);
-    LegendreFunction = AllocateLegendreFunctionMemory(NumTerms); /* For storing the ALF functions */
-    SphVariables = AllocateSphVarMemory(MagneticModel->nMax);
-    a = minimum.heightAboveGeoid; /*sets the loop initialization values*/
-    b = minimum.phi;
-    c = minimum.lambdag;
-    d = StartDate.decimalYear;
-    double alt = minimum.heightAboveGeoid;
+    LegendreFunction   = AllocateLegendreFunctionMemory(NumTerms); /* For storing the ALF functions */
+    SphVariables       = AllocateSphVarMemory(MagneticModel->nMax);
+    a                  = minimum.heightAboveGeoid;                 /*sets the loop initialization values*/
+    b                  = minimum.phi;
+    c                  = minimum.lambdag;
+    d                  = StartDate.decimalYear;
+    double alt         = minimum.heightAboveGeoid;
 
 
-    for(minimum.heightAboveGeoid = a; minimum.heightAboveGeoid <= maximum.heightAboveGeoid; minimum.heightAboveGeoid += altitude_step_size) /* Altitude loop*/
+    for(minimum.heightAboveGeoid = a; minimum.heightAboveGeoid <= maximum.heightAboveGeoid;
+        minimum.heightAboveGeoid += altitude_step_size)                                 /* Altitude loop*/
     {
-
         for(minimum.phi = b; minimum.phi <= maximum.phi; minimum.phi += cord_step_size) /*Latitude loop*/
         {
-
-            for(minimum.lambdag = c; minimum.lambdag <= maximum.lambdag; minimum.lambdag += cord_step_size) /*Longitude loop*/
+            for(minimum.lambdag = c; minimum.lambdag <= maximum.lambdag;
+                minimum.lambdag += cord_step_size)                                      /*Longitude loop*/
             {
                 alt = minimum.heightAboveGeoid;
-                if(Geoid->isUseGeoid == 1)
-                    ConvertGeoidToEllipsoidHeight(&minimum, Geoid); /* This converts the height above mean sea level to height above the WGS-84 ellipsoid */
-                else
+                if(Geoid->isUseGeoid == 1) {
+                    ConvertGeoidToEllipsoidHeight(
+                        &minimum,
+                        Geoid); /* This converts the height above mean sea level to height above the WGS-84 ellipsoid */
+                } else {
                     minimum.heightAboveEllipsoid = minimum.heightAboveGeoid;
+                }
 #ifndef WMMHR
-                if (minimum.heightAboveEllipsoid < min_wgsalt || minimum.heightAboveEllipsoid > max_wgsalt){
+                if(minimum.heightAboveEllipsoid < min_wgsalt || minimum.heightAboveEllipsoid > max_wgsalt) {
                     printf("\n Unrecognized height: %.2f. \n %s \n", alt, WMM_MileSpec_WARN);
                     print_alt_warning = 1;
                 }
 #endif
                 GeodeticToSpherical(Ellip, minimum, &CoordSpherical);
-                ComputeSphericalHarmonicVariables(Ellip, CoordSpherical, MagneticModel->nMax, SphVariables); /* Compute Spherical Harmonic variables  */
-                AssociatedLegendreFunction(CoordSpherical, MagneticModel->nMax, LegendreFunction); /* Compute ALF  Equations 5-6, WMM Technical report*/
+                ComputeSphericalHarmonicVariables(Ellip, CoordSpherical, MagneticModel->nMax,
+                                                  SphVariables); /* Compute Spherical Harmonic variables  */
+                AssociatedLegendreFunction(CoordSpherical, MagneticModel->nMax,
+                                           LegendreFunction);    /* Compute ALF  Equations 5-6, WMM Technical report*/
 
-                for(StartDate.decimalYear = d; StartDate.decimalYear <= EndDate.decimalYear; StartDate.decimalYear += time_step) /*year loop*/
+                for(StartDate.decimalYear = d; StartDate.decimalYear <= EndDate.decimalYear;
+                    StartDate.decimalYear += time_step)          /*year loop*/
                 {
-
-                    TimelyModifyMagneticModel(StartDate, MagneticModel, TimedMagneticModel); /*This modifies the Magnetic coefficients to the correct date. */
-                    Summation(LegendreFunction, TimedMagneticModel, *SphVariables, CoordSpherical, &MagneticResultsSph); /* Accumulate the spherical harmonic coefficients Equations 10:12 , WMM Technical report*/
-                    SecVarSummation(LegendreFunction, TimedMagneticModel, *SphVariables, CoordSpherical, &MagneticResultsSphVar); /*Sum the Secular Variation Coefficients, Equations 13:15 , WMM Technical report  */
-                    RotateMagneticVector(CoordSpherical, minimum, MagneticResultsSph, &MagneticResultsGeo); /* Map the computed Magnetic fields to Geodetic coordinates Equation 16 , WMM Technical report */
-                    RotateMagneticVector(CoordSpherical, minimum, MagneticResultsSphVar, &MagneticResultsGeoVar); /* Map the secular variation field components to Geodetic coordinates, Equation 17 , WMM Technical report*/
-                    CalculateGeoMagneticElements(&MagneticResultsGeo, &GeoMagneticElements); /* Calculate the Geomagnetic elements, Equation 18 , WMM Technical report */
+                    TimelyModifyMagneticModel(
+                        StartDate, MagneticModel,
+                        TimedMagneticModel);        /*This modifies the Magnetic coefficients to the correct date. */
+                    Summation(LegendreFunction, TimedMagneticModel, *SphVariables, CoordSpherical,
+                              &MagneticResultsSph); /* Accumulate the spherical harmonic coefficients Equations 10:12 , WMM
+                                                       Technical report*/
+                    SecVarSummation(LegendreFunction, TimedMagneticModel, *SphVariables, CoordSpherical,
+                                    &MagneticResultsSphVar); /*Sum the Secular Variation Coefficients, Equations 13:15 , WMM
+                                                                Technical report  */
+                    RotateMagneticVector(CoordSpherical, minimum, MagneticResultsSph,
+                                         &MagneticResultsGeo);    /* Map the computed Magnetic fields to Geodetic coordinates
+                                                                     Equation 16 , WMM Technical report */
+                    RotateMagneticVector(CoordSpherical, minimum, MagneticResultsSphVar,
+                                         &MagneticResultsGeoVar); /* Map the secular variation field components to Geodetic
+                                                                     coordinates, Equation 17 , WMM Technical report*/
+                    CalculateGeoMagneticElements(
+                        &MagneticResultsGeo,
+                        &GeoMagneticElements); /* Calculate the Geomagnetic elements, Equation 18 , WMM Technical report */
                     CalculateGridVariation(minimum, &GeoMagneticElements);
-                    CalculateSecularVariationElements(MagneticResultsGeoVar, &GeoMagneticElements); /*Calculate the secular variation of each of the Geomagnetic elements, Equation 19, WMM Technical report*/
-                    #if WMMHR
-                        WMMHRErrorCalc(GeoMagneticElements.H, &Errors);
-                    #else
-                        WMMErrorCalc(GeoMagneticElements.H, &Errors);
-                    #endif
+                    CalculateSecularVariationElements(
+                        MagneticResultsGeoVar,
+                        &GeoMagneticElements); /*Calculate the secular variation of each of the Geomagnetic elements,
+                                                  Equation 19, WMM Technical report*/
+#if WMMHR
+                    WMMHRErrorCalc(GeoMagneticElements.H, &Errors);
+#else
+                    WMMErrorCalc(GeoMagneticElements.H, &Errors);
+#endif
                     if(GeoMagneticElements.H <= 2000.0) {
                         print_boz_warning_strong = TRUE;
-                    } else if (GeoMagneticElements.H <= 6000.0) {
+                    } else if(GeoMagneticElements.H <= 6000.0) {
                         print_boz_warning_weak = TRUE;
                     }
-                    
-                    if(ElementOption >= 17)
+
+                    if(ElementOption >= 17) {
                         Gradient(Ellip, minimum, TimedMagneticModel, &Gradient);
+                    }
 
                     switch(ElementOption) {
                         case 1:
-                            PrintElement = GeoMagneticElements.Decl; /*1. Angle between the magnetic field vector and true north, positive east*/
+                            PrintElement =
+                                GeoMagneticElements
+                                    .Decl; /*1. Angle between the magnetic field vector and true north, positive east*/
                             ErrorElement = Errors.Decl;
                             break;
                         case 2:
-                            PrintElement = GeoMagneticElements.Incl; /*2. Angle between the magnetic field vector and the horizontal plane, positive downward*/
-                            ErrorElement = Errors.Incl;                            
+                            PrintElement = GeoMagneticElements.Incl; /*2. Angle between the magnetic field vector and the
+                                                                        horizontal plane, positive downward*/
+                            ErrorElement = Errors.Incl;
                             break;
                         case 3:
                             PrintElement = GeoMagneticElements.F; /*3. Magnetic Field Strength*/
@@ -314,7 +305,7 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
                             ErrorElement = Errors.Decl;
                             break;
                         case 9:
-                            PrintElement = GeoMagneticElements.Decldot * 60; /*9. Yearly Rate of change in declination*/
+                            PrintElement      = GeoMagneticElements.Decldot * 60; /*9. Yearly Rate of change in declination*/
                             UncertaintyOption = 0;
                             break;
                         case 10:
@@ -326,7 +317,8 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
                             UncertaintyOption = 0;
                             break;
                         case 12:
-                            PrintElement = GeoMagneticElements.Hdot; /*12. Yearly rate of change in horizontal field strength*/
+                            PrintElement =
+                                GeoMagneticElements.Hdot; /*12. Yearly rate of change in horizontal field strength*/
                             UncertaintyOption = 0;
                             break;
                         case 13:
@@ -342,70 +334,86 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
                             UncertaintyOption = 0;
                             break;
                         case 16:
-                            PrintElement = GeoMagneticElements.GVdot;
+                            PrintElement      = GeoMagneticElements.GVdot;
                             UncertaintyOption = 0;
                             /*16. Yearly rate of change in grid variation*/;
                             break;
                         case 17:
-                            PrintElement = Gradient.gradPhi.X;
+                            PrintElement      = Gradient.gradPhi.X;
                             UncertaintyOption = 0;
                             break;
                         case 18:
-                            PrintElement = Gradient.gradPhi.Y;
+                            PrintElement      = Gradient.gradPhi.Y;
                             UncertaintyOption = 0;
                             break;
                         case 19:
-                            PrintElement = Gradient.gradPhi.Z;
+                            PrintElement      = Gradient.gradPhi.Z;
                             UncertaintyOption = 0;
                             break;
                         case 20:
-                            PrintElement = Gradient.gradLambda.X;
+                            PrintElement      = Gradient.gradLambda.X;
                             UncertaintyOption = 0;
                             break;
                         case 21:
-                            PrintElement = Gradient.gradLambda.Y;
+                            PrintElement      = Gradient.gradLambda.Y;
                             UncertaintyOption = 0;
                             break;
                         case 22:
-                            PrintElement = Gradient.gradLambda.Z;
+                            PrintElement      = Gradient.gradLambda.Z;
                             UncertaintyOption = 0;
                             break;
                         case 23:
-                            PrintElement = Gradient.gradZ.X;
+                            PrintElement      = Gradient.gradZ.X;
                             UncertaintyOption = 0;
                             break;
                         case 24:
-                            PrintElement = Gradient.gradZ.Y;
+                            PrintElement      = Gradient.gradZ.Y;
                             UncertaintyOption = 0;
                             break;
                         case 25:
-                            PrintElement = Gradient.gradZ.Z;
+                            PrintElement      = Gradient.gradZ.Z;
                             UncertaintyOption = 0;
                             break;
                         default:
-                            PrintElement = GeoMagneticElements.Decl; /* 1. Angle between the magnetic field vector and true north, positive east*/
+                            PrintElement =
+                                GeoMagneticElements
+                                    .Decl; /* 1. Angle between the magnetic field vector and true north, positive east*/
                             ErrorElement = Errors.Decl;
                     }
-                    
-                    if(Geoid->isUseGeoid == 1)
-                    {
-                        if(PrintOption == 1) fprintf(fileout, "%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag, minimum.heightAboveGeoid, StartDate.decimalYear, PrintElement);
-                        else printf("%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag, minimum.heightAboveGeoid, StartDate.decimalYear, PrintElement);
-                    } else
-                    {
-                        if(PrintOption == 1) fprintf(fileout, "%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag, minimum.heightAboveEllipsoid, StartDate.decimalYear, PrintElement);
-                        else printf("%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag, minimum.heightAboveEllipsoid, StartDate.decimalYear, PrintElement);
+
+                    if(Geoid->isUseGeoid == 1) {
+                        if(PrintOption == 1) {
+                            fprintf(fileout, "%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag,
+                                    minimum.heightAboveGeoid, StartDate.decimalYear, PrintElement);
+                        } else {
+                            printf("%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag, minimum.heightAboveGeoid,
+                                   StartDate.decimalYear, PrintElement);
+                        }
+                    } else {
+                        if(PrintOption == 1) {
+                            fprintf(fileout, "%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag,
+                                    minimum.heightAboveEllipsoid, StartDate.decimalYear, PrintElement);
+                        } else {
+                            printf("%5.2f %6.2f %8.4f %7.2f %10.2f", minimum.phi, minimum.lambdag,
+                                   minimum.heightAboveEllipsoid, StartDate.decimalYear, PrintElement);
+                        }
                     }
                     if(UncertaintyOption == 1) {
-                        if(PrintOption == 1) fprintf(fileout, " %7.2f", ErrorElement);
-                        else printf(" %7.2f", ErrorElement);
+                        if(PrintOption == 1) {
+                            fprintf(fileout, " %7.2f", ErrorElement);
+                        } else {
+                            printf(" %7.2f", ErrorElement);
+                        }
                     }
-                    if(PrintOption == 1) fprintf(fileout, "\n");
-                    else printf("\n"); /* Complete line */
+                    if(PrintOption == 1) {
+                        fprintf(fileout, "\n");
+                    } else {
+                        printf("\n"); /* Complete line */
+                    }
 
-                     /**Below can be used for XYZ Printing format (longitude latitude output_data)
-                     *  fprintf(fileout, "%5.2f %6.2f %10.4f\n", minimum.lambdag, minimum.phi, PrintElement); **/
-                        
+                                      /**Below can be used for XYZ Printing format (longitude latitude output_data)
+                                       *  fprintf(fileout, "%5.2f %6.2f %10.4f\n", minimum.lambdag, minimum.phi, PrintElement); **/
+
                 } /* year loop */
 
             } /*Longitude Loop */
@@ -413,40 +421,34 @@ INPUT: minimum :Data structure with the following elements (minimum limits of th
         } /* Latitude Loop */
 
     } /* Altitude Loop */
-    
-    if(PrintOption == 1){
-        if(print_boz_warning_strong){ 
+
+    if(PrintOption == 1) {
+        if(print_boz_warning_strong) {
             fprintf(fileout, "%s", BOZ_WARN_TEXT_STRONG);
-        } else if (print_boz_warning_weak) {
+        } else if(print_boz_warning_weak) {
             fprintf(fileout, "%s", BOZ_WARN_TEXT_WEAK);
         }
 #ifndef WMMHR
-        if (!print_alt_warning){
+        if(!print_alt_warning) {
             fprintf(fileout, "%s\n", WMM_MileSpec_INFO);
-        }else{
+        } else {
             fprintf(fileout, "%s\n", WMM_MileSpec_WARN);
         }
 #endif
-    }else{
-     if(print_boz_warning_strong){ 
+    } else {
+        if(print_boz_warning_strong) {
             printf("%s\n", BOZ_WARN_TEXT_STRONG);
-        } else if (print_boz_warning_weak) {
+        } else if(print_boz_warning_weak) {
             printf("%s\n", BOZ_WARN_TEXT_WEAK);
         }
 #ifndef WMMHR
-        if (!print_alt_warning){
+        if(!print_alt_warning) {
             printf("%s\n", WMM_MileSpec_INFO);
-        }else{
+        } else {
             printf("%s\n", WMM_MileSpec_WARN);
         }
 #endif
     }
 
-
-    FreeMagneticModelMemory(TimedMagneticModel);
-    FreeLegendreMemory(LegendreFunction);
-    FreeSphVarMemory(SphVariables);
-
     return TRUE;
 } /*Grid*/
-

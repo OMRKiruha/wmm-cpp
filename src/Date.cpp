@@ -8,7 +8,7 @@
 
 #include <chrono>
 
-namespace wmm{
+namespace wmm {
     Date::Date() {
         const std::time_t t = std::time(nullptr);
         const std::tm *now  = std::localtime(&t);
@@ -33,4 +33,4 @@ namespace wmm{
     void Date::calcDecYear() {
         decimalYear = date_to_decYear(year, month, day);
     }
-}
+}  // namespace wmm

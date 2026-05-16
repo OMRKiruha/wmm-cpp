@@ -14,6 +14,24 @@
 namespace wmm {
     enum COEFFICIENTS : uint8_t { N = 0, M, GNM, HNM, DGNM, DHNM };
 
+    enum PARAMS {
+        SHDF,
+        MODELNAME,
+        PUBLISHER,
+        RELEASEDATE,
+        DATACUTOFF,
+        MODELSTARTYEAR,
+        MODELENDYEAR,
+        EPOCH,
+        INTSTATICDEG,
+        INTSECVARDEG,
+        EXTSTATICDEG,
+        EXTSECVARDEG,
+        GEOMAGREFRAD,
+        NORMALIZATION,
+        SPATBASFUNC
+    };
+
     MagneticModel::MagneticModel(const int numTerms) {
         main_Field_Coeff_G.resize(numTerms + 1);
         main_Field_Coeff_H.resize(numTerms + 1);
@@ -31,8 +49,7 @@ namespace wmm {
         std::vector<std::string> header;
         for(std::string line; std::getline(file, line, ' ');) {
             if(!line.empty()) {
-                auto &val = header.emplace_back(line);
-                if(val.back() == '\n') {
+                if(auto &val = header.emplace_back(line); val.back() == '\n') {
                     val.pop_back();
                     break;
                 }
@@ -110,8 +127,8 @@ namespace wmm {
 
             for(std::string line; std::getline(file, line, ' ');) {
                 if(!line.empty()) {
-                    if(line.find('\n') != std::string::npos) {
-                        isEnd = line.find("999999999") != std::string::npos;
+                    if(line.contains('\n')) {
+                        isEnd = line.contains("999999999");
                         line  = line.substr(0, line.find('\n'));
                         values.emplace_back(line);
                         break;
@@ -164,9 +181,9 @@ namespace wmm {
                 if(const int index = ((n * (n + 1) / 2) + m); index <= b) {
                     const auto timeShift = userDate.decimalYear - epoch;
                     timedMagModel.main_Field_Coeff_H.at(index) =
-                        main_Field_Coeff_H.at(index) + timeShift * secular_Var_Coeff_H.at(index);
+                        main_Field_Coeff_H.at(index) + (timeShift * secular_Var_Coeff_H.at(index));
                     timedMagModel.main_Field_Coeff_G.at(index) =
-                        main_Field_Coeff_G.at(index) + timeShift * secular_Var_Coeff_G.at(index);
+                        main_Field_Coeff_G.at(index) + (timeShift * secular_Var_Coeff_G.at(index));
                     // We need a copy of the secular var coef to calculate secular change
                     timedMagModel.secular_Var_Coeff_H.at(index) = secular_Var_Coeff_H.at(index);
                     timedMagModel.secular_Var_Coeff_G.at(index) = secular_Var_Coeff_G.at(index);
@@ -235,11 +252,6 @@ namespace wmm {
 
     /*End of Wrapper Functions*/
 
-    /******************************************************************************
-     ********************************Memory and File Processing********************
-     * This grouping consists of functions that read coefficient files into the
-     * memory, allocate memory, free memory or print models into coefficient files.
-     ******************************************************************************/
 
     /**  To read the high-degree model coefficients (for example, NGDC 720)
      * INPUT :  filename   file name for static coefficients

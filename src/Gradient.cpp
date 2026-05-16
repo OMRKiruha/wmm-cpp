@@ -37,7 +37,7 @@ namespace wmm {
         adjCoordSpherical.fromGeodetic(ellip, coordGeodetic);
 
         GeoMagneticElements geomagneticElements;
-        geomagneticElements.geomag(ellip, adjCoordSpherical, coordGeodetic, timedMagneticModel);
+        geomagneticElements.calculate(ellip, adjCoordSpherical, coordGeodetic, timedMagneticModel);
         CoordGeodetic adjCoordGeodetic{coordGeodetic};
 
         // Gradient along x
@@ -45,14 +45,14 @@ namespace wmm {
         adjCoordSpherical.fromGeodetic(ellip, adjCoordGeodetic);
 
         GeoMagneticElements adjGeoMagneticElements1;
-        adjGeoMagneticElements1.geomag(ellip, adjCoordSpherical, adjCoordGeodetic, timedMagneticModel);
+        adjGeoMagneticElements1.calculate(ellip, adjCoordSpherical, adjCoordGeodetic, timedMagneticModel);
         adjCoordSpherical.toCartesian(x1, y1, z1);
 
         adjCoordGeodetic.phi = coordGeodetic.phi - phiDelta;
         adjCoordSpherical.fromGeodetic(ellip, adjCoordGeodetic);
 
         GeoMagneticElements adjGeoMagneticElements2;
-        adjGeoMagneticElements2.geomag(ellip, adjCoordSpherical, adjCoordGeodetic, timedMagneticModel);
+        adjGeoMagneticElements2.calculate(ellip, adjCoordSpherical, adjCoordGeodetic, timedMagneticModel);
         adjCoordSpherical.toCartesian(x2, y2, z2);
 
         double distance = sqrt(((x1 - x2) * (x1 - x2)) + ((y1 - y2) * (y1 - y2)) + ((z1 - z2) * (z1 - z2)));
@@ -76,14 +76,14 @@ namespace wmm {
         adjCoordGeodetic.heightAboveGeoid     = coordGeodetic.heightAboveGeoid + hDelta;
         adjCoordSpherical.fromGeodetic(ellip, adjCoordGeodetic);
 
-        adjGeoMagneticElements1.geomag(ellip, adjCoordSpherical, adjCoordGeodetic, timedMagneticModel);
+        adjGeoMagneticElements1.calculate(ellip, adjCoordSpherical, adjCoordGeodetic, timedMagneticModel);
         adjCoordSpherical.toCartesian(x1, y1, z1);
 
         adjCoordGeodetic.heightAboveEllipsoid = coordGeodetic.heightAboveEllipsoid - hDelta;
         adjCoordGeodetic.heightAboveGeoid     = coordGeodetic.heightAboveGeoid - hDelta;
         adjCoordSpherical.fromGeodetic(ellip, adjCoordGeodetic);
 
-        adjGeoMagneticElements2.geomag(ellip, adjCoordSpherical, adjCoordGeodetic, timedMagneticModel);
+        adjGeoMagneticElements2.calculate(ellip, adjCoordSpherical, adjCoordGeodetic, timedMagneticModel);
         adjCoordSpherical.toCartesian(x2, y2, z2);
 
         distance = sqrt(((x1 - x2) * (x1 - x2)) + ((y1 - y2) * (y1 - y2)) + ((z1 - z2) * (z1 - z2)));

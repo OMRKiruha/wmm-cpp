@@ -1,4 +1,5 @@
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <iostream>
@@ -10,10 +11,77 @@
 #include "Geoid.h"
 #include "GeomagInterativeLib.h"
 #include "Gradient.h"
+#include "MagneticConstants.h"
 #include "MagneticModel.h"
 #include "MagneticUtils.h"
 
 namespace wmm {
+
+    /** This converts a given decimal degree into a DMS string.
+     * INPUT  DegreesOfArc   decimal degree
+     *           UnitDepth	How many iterations should be printed,
+     *                        1 = Degrees
+     *                        2 = Degrees, Minutes
+     *                        3 = Degrees, Minutes, Seconds
+     * OUPUT  DMSstring 	 pointer to DMSString.  Must be at least 30 characters.
+     * CALLS : none
+     */
+    void DegreeToDMSstring(const double degreesOfArc, const int unitDepth, std::string &out) {
+        double temp = degreesOfArc;
+
+        if(unitDepth > 3) {
+            std::cerr << "\nError: UnitDepth too large\n";
+        }
+
+        for(int i = 0; i < unitDepth; i++) {
+            int DMS = static_cast<int>(temp);
+            temp    = (temp - DMS) * 60;
+
+            if(i == unitDepth - 1 && temp >= 30) {
+                DMS++;
+            } else if(i == unitDepth - 1 && temp <= -30) {
+                DMS--;
+            }
+
+            out.append(std::to_string(DMS));
+
+            switch(i) {
+                case 0:
+                    out.append(" Deg ");
+                    break;
+                case 1:
+                    out.append(" Min ");
+                    break;
+                case 2:
+                    out.append(" Sec ");
+                    break;
+                default:;
+            }
+        }
+    }
+
+    /** This converts a given DMS string into decimal degrees.
+     * INPUT  DMSstring 	 pointer to DMSString
+     * OUTPUT  DegreesOfArc   decimal degree
+     * CALLS : none
+     */
+    void DMSstringToDegree(const std::string_view DMSstring, double *degreesOfArc) {
+        int second{};
+        int minute{};
+        int degree{};
+        int sign    = 1;
+        const int j = sscanf(DMSstring.data(), "%d, %d, %d", &degree, &minute, &second);
+
+        if(j != 3) {
+            sscanf(DMSstring.data(), "%d %d %d", &degree, &minute, &second);
+        }
+
+        if(degree < 0) {
+            sign = -1;
+        }
+        degree        = degree * sign;
+        *degreesOfArc = sign * (degree + (minute / 60.0) + (second / 3600.0));
+    } /*DMSstringToDegree*/
 
     void clear_input_buffer() {
         int c;
@@ -38,15 +106,15 @@ namespace wmm {
             return (ch < '0' || ch > '9') && (ch != ',' && ch != ' ' && ch != '-' && ch != '\0' && ch != '\n');
         };
 
-        if(std::any_of(input.begin(), input.end(), isIllegalChar)) {
+        if(std::ranges::any_of(input, isIllegalChar)) {
             Error = "\nError: Input contains an illegal character, legal characters for Degree, Minute, Second format "
                     "are:\n '0-9' ',' '-' '[space]' '[Enter]'\n";
             return false;
         }
 
-        j = static_cast<int>(std::count(input.begin(), input.end(), ','));
+        j = static_cast<int>(std::ranges::count(input, ','));
 
-        if(j == 1) {         // parse one floating point
+        if(j == 1) {  // parse one floating point
             minute = 0;
             second = 0;
 

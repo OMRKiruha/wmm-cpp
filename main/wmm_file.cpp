@@ -27,9 +27,9 @@ Updated April, 2023
 
 #include <cmath> /* for gcc */
 
-#include "EGM9615.h"
 #include "GeomagnetismHeader.h"
-#include "version.h"
+
+#include "wmm_warn.h"
 
 #define NaN log(-1.0)
 /* constants */
@@ -44,7 +44,6 @@ Updated April, 2023
 
 
 #define PATH MAXREAD
-
 
 /****************************************************************************/
 /*                                                                          */
@@ -83,23 +82,6 @@ Updated April, 2023
 /*                                                                          */
 
 /****************************************************************************/
-
-constexpr auto BOZ_WARN_TEXT_STRONG =
-    "Warning: some calculated locations are in the blackout zone around the magnetic pole\n"
-    "as defined by the WMM military specification \n"
-    "(https://www.ngdc.noaa.gov/geomag/WMM/data/MIL-PRF-89500B.pdf).\n"
-    "Compass accuracy is highly degraded in this region.\n";
-constexpr auto BOZ_WARN_TEXT_WEAK = "Caution: some calculated locations approach the blackout zone around the magnetic\n"
-                                    "pole as defined by the WMM military specification \n"
-                                    "(https://www.ngdc.noaa.gov/geomag/WMM/data/MIL-PRF-89500B.pdf).\n"
-                                    "Compass accuracy may be degraded in this region.\n";
-constexpr auto WMM_MileSpec_INFO =
-    "Warning: The height validity of the geomagnetic components is dependent on the geomagnetic activity level. For more "
-    "information see \n"
-    "(https://www.ncei.noaa.gov/products/world-magnetic-model/accuracy-limitations-error-model)\n";
-constexpr auto WMM_MileSpec_WARN =
-    "Warning: WMM will not meet MilSpec at this altitude. For more information see \n"
-    "(https://www.ncei.noaa.gov/products/world-magnetic-model/accuracy-limitations-error-model)\n";
 
 int main(int argc, char *argv[]) {
 #ifdef MAC
@@ -207,7 +189,7 @@ int main(int argc, char *argv[]) {
 
     /* Memory allocation */
 
-    strncpy(VersionDate, VERSIONDATE_LARGE + 39, 11);
+    strncpy(VersionDate, VERSION_DATE_LARGE + 39, 11);
     VersionDate[11] = '\0';
     if(!robustReadMagModels(filename, &MagneticModels, epochs)) {
         do {
@@ -235,7 +217,7 @@ int main(int argc, char *argv[]) {
     /* Check for Geographic Poles */
 
     /* Set EGM96 Geoid parameters */
-    Geoid.geoidHeightBuffer = GeoidHeightBuffer;
+    Geoid.geoidHeightBuffer  = GeoidHeightBuffer;
     Geoid.isGeoidInitialized = 1;
     /* Set EGM96 Geoid parameters END */
     maxyr = MagneticModels[0]->CoefficientFileEndDate;
@@ -612,9 +594,8 @@ int main(int argc, char *argv[]) {
             print_alt_warning = 1;
         }
 
-        GeodeticToSpherical(
-            Ellip, CoordGeodetic,
-            &CoordSpherical); /*Convert from geodeitic to Spherical Equations: 17-18, WMM Technical report*/
+        GeodeticToSpherical(Ellip, CoordGeodetic,
+                            &CoordSpherical); /*Convert from geodeitic to Spherical Equations: 17-18, WMM Technical report*/
         epoch = ((int)UserDate.decimalYear - 1900) / 5;
         if(epoch >= epochs) {
             epoch = epochs - 1;
@@ -622,11 +603,10 @@ int main(int argc, char *argv[]) {
         if(epoch < 0) {
             epoch = 0;
         }
-        TimelyModifyMagneticModel(
-            UserDate, MagneticModels[epoch],
-            TimedMagneticModel);          /* Time adjust the coefficients, Equation 19, WMM Technical report */
+        TimelyModifyMagneticModel(UserDate, MagneticModels[epoch],
+                                  TimedMagneticModel); /* Time adjust the coefficients, Equation 19, WMM Technical report */
         Geomag(Ellip, CoordSpherical, CoordGeodetic, TimedMagneticModel,
-                   &GeoMagneticElements); /* Computes the geoMagnetic field elements and their time change*/
+               &GeoMagneticElements);                  /* Computes the geoMagnetic field elements and their time change*/
         CalculateGridVariation(CoordGeodetic, &GeoMagneticElements);
 
         if(GeoMagneticElements.H <= 2000.0) {
@@ -697,7 +677,7 @@ int main(int argc, char *argv[]) {
         printf("\n %s \n", WMM_MileSpec_WARN);
     }
 #endif
-    
+
     for(int i = 0; i < args_row; i++) {
         free(args[i]);
     }

@@ -12,10 +12,10 @@ namespace wmm {
     struct MagneticResults;
 
     struct GeoMagneticElements {
-        void geomag(const Ellipsoid &ellip, const CoordSpherical &coordSpherical, const CoordGeodetic &coordGeodetic,
+        void calculate(const Ellipsoid &ellip, const CoordSpherical &coordSpherical, const CoordGeodetic &coordGeodetic,
                     MagneticModel &timedMagneticModel);
 
-        void geomag(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic, MagneticModel &timedMagneticModel);
+        void calculate(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic, MagneticModel &timedMagneticModel);
 
         void gradY(const Ellipsoid &ellip, const CoordSpherical &coordSpherical, const CoordGeodetic &coordGeodetic,
                    const MagneticModel &timedMagneticModel, const GeoMagneticElements &geoMagneticElements);
@@ -58,4 +58,7 @@ namespace wmm {
 
         void calculateGradientElements(const MagneticResults &gradResults, const GeoMagneticElements &magElem);
     };
+
+    void BaseErrors(double declCoef, double declBaseline, double inclOffset, double fOffset, double multiplier, double H,
+                double *declErr, double *inclErr, double *fErr);
 }  // namespace wmm

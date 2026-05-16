@@ -10,9 +10,6 @@
 #include "GeomagnetismHeader.h"
 
 #include "GeomagInterativeLib.h"
-#include "MagneticUtils.h"
-#include "magcalc.h"
-#include "version.h"
 
 #include "wmm_warn.h"
 
@@ -52,7 +49,7 @@ int main() {
     }
 
     if(std::isnan(magneticModel.epoch)) {  // Model is correct
-        wmm::printError(2);
+        std::cerr << "\nError in MagneticModel.\n";
     }
 
     wmm::Date userDate{};  // Default constructor Date using current system date
@@ -74,7 +71,7 @@ int main() {
             coordGeodetic.lambda = 40.8;
             coordGeodetic.phi    = 50.4;
             // Calculate geomagnetic elements in point with geodetic coordinates in current date
-            point_calc(ellip, coordGeodetic, userDate, timedMagneticModel, &geoMagneticElements, &errors);
+            pointCalc(ellip, coordGeodetic, userDate, timedMagneticModel, &geoMagneticElements, &errors);
 
             if(geoMagneticElements.H <= 2000.0) {
                 std::cout << std::endl << BOZ_WARN_TEXT_STRONG << std::endl;

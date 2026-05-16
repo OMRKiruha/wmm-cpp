@@ -4,12 +4,8 @@
 #include <iostream>
 #include <string>
 
-#include "GeomagnetismHeader.h"
-
 #include "GeomagInterativeLib.h"
-#include "MagneticUtils.h"
-#include "magcalc.h"
-#include "version.h"
+#include "GeomagnetismHeader.h"
 
 #include "wmm_warn.h"
 
@@ -38,7 +34,6 @@ void help_info(const wmm::MagneticModel &magneticModel, const std::string &short
 constexpr auto max_size = std::numeric_limits<std::streamsize>::max();
 
 int main() {
-
 #ifdef WMMHR
     const std::string filename{"WMMHR.COF"};
     const std::string program_name{"wmmhr_point"};
@@ -75,7 +70,7 @@ int main() {
             coordGeodetic.convertGeoidToEllipsoidHeight(geoid);
             // Convert from geodetic to Spherical Equations: 17-18, WMM Technical report
             coordSpherical.fromGeodetic(ellip, coordGeodetic);
-            point_calc(ellip, coordGeodetic, coordSpherical, userDate, magneticModel, &geoMagneticElements, &errors);
+            pointCalc(ellip, coordGeodetic, coordSpherical, userDate, magneticModel, &geoMagneticElements, &errors);
 
             if(geoMagneticElements.H <= 2000.0) {
                 std::cout << std::endl << BOZ_WARN_TEXT_STRONG << std::endl;
@@ -113,7 +108,7 @@ int main() {
 /** @brief Prints the introduction to the Geomagnetic program.  It needs the Magnetic model for the epoch.
  */
 char GeomagIntroduction_WMM(const wmm::MagneticModel &magneticModel, const std::string &modelDate) {
-    std::string versionDate{VERSIONDATE_LARGE};
+    std::string versionDate{VERSION_DATE_LARGE};
     versionDate = versionDate.substr(39, 11);
 
     std::string msg{};

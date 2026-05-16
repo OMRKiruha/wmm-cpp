@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GeomagnetismHeader.h"
+#include "../include/GeomagnetismHeader.h"
 
 #define WGS84ON 1
 #define MSLON 2
@@ -13,6 +13,8 @@ namespace wmm {
     struct GeoMagneticElements;
     struct Gradient;
 
+    void DegreeToDMSstring(double degreesOfArc, int unitDepth, std::string &out);
+    void DMSstringToDegree(std::string_view DMSstring, double *degreesOfArc);
     bool ValidateDMSstring(std::string_view input, int min, int max, std::string &Error);
     void GetDeg(std::string_view msg, double *latitude, double min, double max);
     int GetAltitude(std::string_view Query_String, Geoid *geoid, CoordGeodetic *coords, int bounds[2], int AltitudeSetting);

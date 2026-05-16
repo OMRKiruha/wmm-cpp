@@ -6,7 +6,6 @@
 
 #include "CoordGeodetic.h"
 #include "CoordSpherical.h"
-#include "Ellipsoid.h"
 #include "LegendreFunction.h"
 #include "MagneticConstants.h"
 #include "MagneticModel.h"
@@ -27,10 +26,10 @@ namespace wmm {
         Y = magneticResultsGeo.By;
         Z = magneticResultsGeo.Bz;
 
-        H    = sqrt((magneticResultsGeo.Bx * magneticResultsGeo.Bx) + (magneticResultsGeo.By * magneticResultsGeo.By));
-        F    = sqrt((H * H) + (magneticResultsGeo.Bz * magneticResultsGeo.Bz));
-        Decl = rad2Deg(atan2(Y, X));
-        Incl = rad2Deg(atan2(Z, H));
+        H    = std::sqrt((magneticResultsGeo.Bx * magneticResultsGeo.Bx) + (magneticResultsGeo.By * magneticResultsGeo.By));
+        F    = std::sqrt((H * H) + (magneticResultsGeo.Bz * magneticResultsGeo.Bz));
+        Decl = rad2Deg(std::atan2(Y, X));
+        Incl = rad2Deg(std::atan2(Z, H));
     }
 
     /** @brief This takes the Magnetic Variation in x, y, and z and uses it to calculate
@@ -66,8 +65,8 @@ namespace wmm {
      * change. Though, this subroutine can be called successively to calculate a time series,
      * profile or grid of magnetic field, these are better achieved by the subroutine Grid.
      */
-    void GeoMagneticElements::geomag(const Ellipsoid &ellip, const CoordSpherical &coordSpherical,
-                                     const CoordGeodetic &coordGeodetic, MagneticModel &timedMagneticModel) {
+    void GeoMagneticElements::calculate(const Ellipsoid &ellip, const CoordSpherical &coordSpherical,
+                                        const CoordGeodetic &coordGeodetic, MagneticModel &timedMagneticModel) {
         // Create and compute ALF functions
         const LegendreFunction legendreFunction(coordSpherical, timedMagneticModel.nMax);
 
@@ -171,23 +170,8 @@ namespace wmm {
     /** @brief This function scales all the geomagnetic elements to scale a vector use MagneticResultsScale
      */
     [[maybe_unused]] GeoMagneticElements GeoMagneticElements::scaled(const double factor) const {
-        GeoMagneticElements product;
-        product.X       = X * factor;
-        product.Y       = Y * factor;
-        product.Z       = Z * factor;
-        product.H       = H * factor;
-        product.F       = F * factor;
-        product.Incl    = Incl * factor;
-        product.Decl    = Decl * factor;
-        product.GV      = GV * factor;
-        product.Xdot    = Xdot * factor;
-        product.Ydot    = Ydot * factor;
-        product.Zdot    = Zdot * factor;
-        product.Hdot    = Hdot * factor;
-        product.Fdot    = Fdot * factor;
-        product.Incldot = Incldot * factor;
-        product.Decldot = Decldot * factor;
-        product.GVdot   = GVdot * factor;
+        GeoMagneticElements product{*this};
+        product.scale(factor);
         return product;
     }
 
@@ -259,10 +243,18 @@ namespace wmm {
         H = sqrt((cos2I * F * F) + (B.F * B.F * sin2I * EISq));
     }
 
-    void GeoMagneticElements::geomag(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic,
-                                     MagneticModel &timedMagneticModel) {
+    void GeoMagneticElements::calculate(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic,
+                                        MagneticModel &timedMagneticModel) {
         CoordSpherical coordSpherical;
         coordSpherical.fromGeodetic(ellip, coordGeodetic);
-        geomag(ellip, coordSpherical, coordGeodetic, timedMagneticModel);
+        calculate(ellip, coordSpherical, coordGeodetic, timedMagneticModel);
+    }
+
+    void BaseErrors(const double declCoef, const double declBaseline, const double inclOffset, const double fOffset,
+                    const double multiplier, const double H, double *declErr, double *inclErr, double *fErr) {
+        const double declHorizontalAdjustmentSq = (declCoef / H) * (declCoef / H);
+        *declErr = sqrt(declHorizontalAdjustmentSq + (declBaseline * declBaseline)) * multiplier;
+        *inclErr = inclOffset * multiplier;
+        *fErr    = fOffset * multiplier;
     }
 }  // namespace wmm
