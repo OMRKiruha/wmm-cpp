@@ -24,9 +24,9 @@ namespace wmm {
         void GradYSummation(const LegendreFunction &legendreFunction, const MagneticModel &magneticModel,
                             const SphericalHarmonicVariables &sphVariables, const CoordSpherical &coordSpherical);
 
-        double Bx{};  // North
-        double By{};  // East
-        double Bz{};  // Down
+        double Bx{0.0};  // North
+        double By{0.0};  // East
+        double Bz{0.0};  // Down
 
     private:
         void summationSpecial(const MagneticModel &magneticModel, const SphericalHarmonicVariables &sphVariables,

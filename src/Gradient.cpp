@@ -22,8 +22,8 @@ namespace wmm {
      * the local latitude line.
      **/
     void Gradient::calculate(const Ellipsoid &ellip, const CoordGeodetic &coordGeodetic, MagneticModel &timedMagneticModel) {
-        const double phiDelta = 0.01;
-        const double hDelta   = -1;
+        constexpr double phiDelta = 0.01;
+        constexpr double hDelta   = -1;
         double x1{};
         double y1{};
         double z1{};

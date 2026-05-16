@@ -8,6 +8,7 @@
 #include "MagneticUtils.h"
 
 #include <cmath>
+#include <cstddef>
 #include <iostream>
 
 namespace wmm {
@@ -68,19 +69,19 @@ namespace wmm {
         std::vector<double> preSqr(numTerms + 1);
         std::vector<double> f2(numTerms + 1);
 
-        for(int n = 0; n <= 2 * nMax + 1; ++n) {
+        for(int n = 0; n <= (2 * nMax) + 1; ++n) {
             preSqr.at(n) = std::sqrt(n);
         }
 
         int k = 2;
         for(int n = 2; n <= nMax; n++) {
             ++k;
-            f1[k] = (2. * n - 1) / static_cast<double>(n);
-            f2[k] = static_cast<double>(n - 1) / static_cast<double>(n);
+            f1.at(k) = ((2. * n) - 1) / static_cast<double>(n);
+            f2.at(k) = static_cast<double>(n - 1) / static_cast<double>(n);
             for(int m = 1; m <= n - 2; m++) {
                 ++k;
-                f1[k] = (2. * n - 1) / preSqr[n + m] / preSqr[n - m];
-                f2[k] = preSqr[n - m - 1] * preSqr[n + m - 1] / preSqr[n + m] / preSqr[n - m];
+                f1.at(k) = ((2. * n) - 1) / preSqr.at(n + m) / preSqr.at(n - m);
+                f2.at(k) = preSqr.at(n - m - 1) * preSqr.at(n + m - 1) / preSqr.at(n + m) / preSqr.at(n - m);
             }
             k += 2;
         }
@@ -101,12 +102,12 @@ namespace wmm {
             k                = k + n;
             const double plm = (f1.at(k) * x * pm1) - (f2.at(k) * pm2);
             Pcup.at(k)       = plm;
-            dPcup.at(k)      = static_cast<double>(n) * (pm1 - x * plm) / z;
+            dPcup.at(k)      = static_cast<double>(n) * (pm1 - (x * plm)) / z;
             pm2              = pm1;
             pm1              = plm;
         }
 
-        double pmm      = preSqr[2] * scalef;
+        double pmm      = preSqr.at(2) * scalef;
         double rescalem = 1.0 / scalef;
         int kstart      = 0;
 
@@ -123,9 +124,9 @@ namespace wmm {
 
             // Calculate Pcup(m + 1, m)
             k           = kstart + m + 1;
-            pm1         = x * preSqr.at(2 * m + 1) * pm2;
+            pm1         = x * preSqr.at((2 * m) + 1) * pm2;
             Pcup.at(k)  = pm1 * rescalem;
-            dPcup.at(k) = ((pm2 * rescalem) * preSqr.at(2 * m + 1) - x * static_cast<double>(m + 1) * Pcup.at(k)) / z;
+            dPcup.at(k) = (((pm2 * rescalem) * preSqr.at((2 * m) + 1)) - (x * static_cast<double>(m + 1) * Pcup.at(k))) / z;
 
             // Calculate Pcup(n, m)
             for(int n = m + 2; n <= nMax; ++n) {
@@ -133,7 +134,7 @@ namespace wmm {
                 const double plm = (x * f1.at(k) * pm1) - (f2.at(k) * pm2);
                 Pcup.at(k)       = plm * rescalem;
                 dPcup.at(k) =
-                    (preSqr.at(n + m) * preSqr.at(n - m) * (pm1 * rescalem) - static_cast<double>(n) * x * Pcup.at(k)) / z;
+                    ((preSqr.at(n + m) * preSqr.at(n - m) * (pm1 * rescalem)) - (static_cast<double>(n) * x * Pcup.at(k))) / z;
                 pm2 = pm1;
                 pm1 = plm;
             }
@@ -172,23 +173,23 @@ namespace wmm {
                 const int index = ((n * (n + 1) / 2) + m);
                 int index1{0};
                 if(n == m) {
-                    index1          = (n - 1) * n / 2 + m - 1;
+                    index1          = ((n - 1) * n / 2) + m - 1;
                     Pcup.at(index)  = z * Pcup.at(index1);
-                    dPcup.at(index) = z * dPcup.at(index1) + x * Pcup.at(index1);
+                    dPcup.at(index) = (z * dPcup.at(index1)) + (x * Pcup.at(index1));
                 } else if(n == 1 && m == 0) {
-                    index1          = (n - 1) * n / 2 + m;
+                    index1          = ((n - 1) * n / 2) + m;
                     Pcup.at(index)  = x * Pcup.at(index1);
-                    dPcup.at(index) = x * dPcup.at(index1) - z * Pcup.at(index1);
+                    dPcup.at(index) = (x * dPcup.at(index1)) - (z * Pcup.at(index1));
                 } else if(n > 1 && n != m) {
-                    index1           = (n - 2) * (n - 1) / 2 + m;
+                    index1           = ((n - 2) * (n - 1) / 2) + m;
                     const int index2 = ((n - 1) * n / 2) + m;
                     if(m > n - 2) {
                         Pcup.at(index)  = x * Pcup.at(index2);
-                        dPcup.at(index) = x * dPcup.at(index2) - z * Pcup.at(index2);
+                        dPcup.at(index) = (x * dPcup.at(index2)) - (z * Pcup.at(index2));
                     } else {
-                        const double k  = static_cast<double>(((n - 1) * (n - 1)) - (m * m)) / ((2. * n - 1) * (2. * n - 3));
-                        Pcup.at(index)  = x * Pcup[index2] - k * Pcup[index1];
-                        dPcup.at(index) = x * dPcup[index2] - z * Pcup[index2] - k * dPcup[index1];
+                        const double k  = static_cast<double>(((n - 1) * (n - 1)) - (m * m)) / (((2. * n) - 1) * ((2. * n) - 3));
+                        Pcup.at(index)  = (x * Pcup.at(index2)) - (k * Pcup.at(index1));
+                        dPcup.at(index) = (x * dPcup.at(index2)) - (z * Pcup.at(index2)) - (k * dPcup.at(index1));
                     }
                 }
             }
@@ -202,11 +203,11 @@ namespace wmm {
             int index1 = (n - 1) * n / 2;
 
             // for m = 0
-            schmidtQuasiNorm.at(index) = schmidtQuasiNorm.at(index1) * (2. * n - 1) / static_cast<double>(n);
+            schmidtQuasiNorm.at(index) = schmidtQuasiNorm.at(index1) * ((2. * n) - 1) / static_cast<double>(n);
 
             for(int m = 1; m <= n; m++) {
-                index  = (n * (n + 1) / 2 + m);
-                index1 = (n * (n + 1) / 2 + m - 1);
+                index  = ((n * (n + 1) / 2) + m);
+                index1 = ((n * (n + 1) / 2) + m - 1);
                 schmidtQuasiNorm.at(index) =
                     schmidtQuasiNorm.at(index1) * sqrt(((n - m + 1) * (m == 1 ? 2. : 1.)) / static_cast<double>(n + m));
             }

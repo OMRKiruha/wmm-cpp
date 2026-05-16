@@ -26,8 +26,6 @@ namespace wmm {
     double date_to_decYear(int year, int month, int day);
 
     // User Interface
-    void printError(int errorNumber);
-
     int warnings(int control, double value, const MagneticModel &magneticModel);
 
 }  // namespace wmm

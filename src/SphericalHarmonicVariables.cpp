@@ -39,8 +39,8 @@ namespace wmm {
 
         if(nMax + 1 >= 3) {
             for(int m = 2; m <= nMax; m++) {
-                cos_mlambda.at(m) = cos_mlambda.at(m - 1) * cos_lambda - sin_mlambda.at(m - 1) * sin_lambda;
-                sin_mlambda.at(m) = cos_mlambda.at(m - 1) * sin_lambda + sin_mlambda.at(m - 1) * cos_lambda;
+                cos_mlambda.at(m) = (cos_mlambda.at(m - 1) * cos_lambda) - (sin_mlambda.at(m - 1) * sin_lambda);
+                sin_mlambda.at(m) = (cos_mlambda.at(m - 1) * sin_lambda) + (sin_mlambda.at(m - 1) * cos_lambda);
             }
         }
     }

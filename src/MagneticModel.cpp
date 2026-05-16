@@ -9,6 +9,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 
 namespace wmm {
     enum COEFFICIENTS : uint8_t { N = 0, M, GNM, HNM, DGNM, DHNM };
@@ -91,7 +92,7 @@ namespace wmm {
         std::string str;
 
         if(!file.is_open()) {
-            printError(20);
+            std::cerr << "\nError opening coefficient file\n";
             return false;
         }
 

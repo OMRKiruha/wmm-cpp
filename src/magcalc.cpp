@@ -6,7 +6,6 @@
 
 #include "GeoMagneticElements.h"
 #include "MagneticModel.h"
-#include "CoordSpherical.h"
 
 namespace wmm {
 

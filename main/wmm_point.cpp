@@ -55,7 +55,7 @@ int main() {
     }
 
     if(std::isnan(magneticModel.epoch)) {
-        wmm::printError(2);
+        std::cerr << "\nError in MagneticModel.\n";
     }
 
     // Set EGM96 geoid parameters

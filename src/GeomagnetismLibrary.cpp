@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <iostream>
 
 /* $Id: GeomagnetismLibrary.c 1521 2017-01-24 17:52:41Z awoods $
  *
@@ -104,20 +105,20 @@ namespace wmm {
      * OUPUT  DMSstring 	 pointer to DMSString.  Must be at least 30 characters.
      * CALLS : none
      */
-    void DegreeToDMSstring(const double DegreesOfArc, const int UnitDepth, std::string &out) {
-        double temp = DegreesOfArc;
+    void DegreeToDMSstring(const double degreesOfArc, const int unitDepth, std::string &out) {
+        double temp = degreesOfArc;
 
-        if(UnitDepth > 3) {
-            printError(21);
+        if(unitDepth > 3) {
+            std::cerr << "\nError: UnitDepth too large\n";
         }
 
-        for(int i = 0; i < UnitDepth; i++) {
+        for(int i = 0; i < unitDepth; i++) {
             int DMS  = static_cast<int>(temp);
             temp = (temp - DMS) * 60;
 
-            if(i == UnitDepth - 1 && temp >= 30) {
+            if(i == unitDepth - 1 && temp >= 30) {
                 DMS++;
-            } else if(i == UnitDepth - 1 && temp <= -30) {
+            } else if(i == unitDepth - 1 && temp <= -30) {
                 DMS--;
             }
 
